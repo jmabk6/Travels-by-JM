@@ -127,7 +127,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v13";
+const VERSION="v14";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -224,13 +224,12 @@ function renderDetail(){
   if(e.cout)rows.push(`<div class="row cost"><span class="k">Coût</span><span class="v">${esc(e.cout)}</span></div>`);
   const reservePill=e.reserve===true?'<span class="pill ok">Réservé</span>':e.reserve===false?'<span class="pill no">À réserver</span>':"";
   const acts=[];
-  if(addr||nm!=="(sans nom)")acts.push(`<a class="act" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener"><span class="ic">📍</span><span>Voir sur le plan</span><span class="go">›</span></a>`);
   if(tel)acts.push(`<a class="act" href="tel:${esc(tel).replace(/\s/g,'')}"><span class="ic">📞</span><span>Appeler — ${esc(tel)}</span><span class="go">›</span></a>`);
   (e.actions||[]).forEach((a,ai)=>{
     if(a.type==="lien"&&(a.label||a.url))acts.push(`<a class="act" ${a.url?`href="${esc(a.url)}" target="_blank" rel="noopener"`:""}><span class="ic">🔗</span><span>${esc(a.label||a.url||"Lien")}</span><span class="go">›</span></a>`);
-    else if(a.type==="plan"&&(a.depart||a.arrivee))acts.push(`<a class="act" href="${dirUrl(a.depart,a.arrivee)}" target="_blank" rel="noopener"><span class="ic">🧭</span><span>${esc(a.depart||"?")} → ${esc(a.arrivee||"?")}</span><span class="go">›</span></a>`);
-    else if(a.type==="fichier"&&a.data)acts.push(`<a class="act" onclick="openAtt('${j.id}','${e.id}',${ai})"><span class="ic">📄</span><span>${esc(a.name||"Fichier")}</span><span class="go">›</span></a>`);
-    else if(a.type==="photo"&&a.data)acts.push(`<a class="act" onclick="openImg('${j.id}','${e.id}',${ai})"><span class="ic">🖼</span><span>${esc(a.name||"Photo")}</span><span class="go">›</span></a>`);
+    else if(a.type==="plan"&&(a.depart||a.arrivee))acts.push(`<a class="act" href="${dirUrl(a.depart,a.arrivee)}" target="_blank" rel="noopener"><span class="ic">🧭</span><span>${esc(a.label||((a.depart||"?")+" → "+(a.arrivee||"?")))}</span><span class="go">›</span></a>`);
+    else if(a.type==="fichier"&&a.data)acts.push(`<a class="act" onclick="openAtt('${j.id}','${e.id}',${ai})"><span class="ic">📄</span><span>${esc(a.label||a.name||"Fichier")}</span><span class="go">›</span></a>`);
+    else if(a.type==="photo"&&a.data)acts.push(`<a class="act" onclick="openImg('${j.id}','${e.id}',${ai})"><span class="ic">🖼</span><span>${esc(a.label||a.name||"Photo")}</span><span class="go">›</span></a>`);
   });
   $("app").innerHTML=`
     <div class="top"><button class="back" onclick="back()">‹ Itinéraire</button><h1>${esc(j.titre)}</h1><span class="sp"></span></div>
@@ -274,9 +273,10 @@ function captureEditor(){
   const rs=$("f_reserve").value;EDIT.reserve=rs===""?null:rs==="1";
   EDIT.champs=(EDIT.champs||[]).map((c,i)=>({label:$("cl_"+i)?$("cl_"+i).value.trim():c.label,value:$("cv_"+i)?$("cv_"+i).value.trim():c.value}));
   EDIT.actions=(EDIT.actions||[]).map((a,i)=>{
-    if(a.type==="lien")return{type:"lien",label:$("al_"+i)?$("al_"+i).value.trim():a.label,url:$("au_"+i)?$("au_"+i).value.trim():a.url};
-    if(a.type==="plan")return{type:"plan",depart:$("ad_"+i)?$("ad_"+i).value.trim():a.depart,arrivee:$("aa_"+i)?$("aa_"+i).value.trim():a.arrivee};
-    return a;
+    const label=$("al_"+i)?$("al_"+i).value.trim():(a.label||"");
+    if(a.type==="lien")return{type:"lien",label:label,url:$("au_"+i)?$("au_"+i).value.trim():a.url};
+    if(a.type==="plan")return{type:"plan",label:label,depart:$("ad_"+i)?$("ad_"+i).value.trim():a.depart,arrivee:$("aa_"+i)?$("aa_"+i).value.trim():a.arrivee};
+    return Object.assign({},a,{label:label});
   });
   EDIT.notes=$("f_notes")?$("f_notes").value:EDIT.notes;
   if($("f_jour"))EDIT_CTX.jid=$("f_jour").value;
@@ -284,20 +284,21 @@ function captureEditor(){
 function onGroupChange(){captureEditor();if((EDIT.champs||[]).every(c=>!c.value))EDIT.champs=defChamps(EDIT.groupe);renderEditor();}
 function addChamp(){captureEditor();EDIT.champs=EDIT.champs||[];EDIT.champs.push({label:"",value:""});renderEditor();}
 function rmChamp(i){captureEditor();EDIT.champs.splice(i,1);renderEditor();}
-function addAction(type){captureEditor();EDIT.actions=EDIT.actions||[];const a=type==="lien"?{type:"lien",label:"",url:""}:type==="plan"?{type:"plan",depart:"",arrivee:""}:{type:type};EDIT.actions.push(a);renderEditor();}
+function addAction(type){captureEditor();EDIT.actions=EDIT.actions||[];const a=type==="lien"?{type:"lien",label:"",url:""}:type==="plan"?{type:"plan",label:"",depart:"",arrivee:""}:{type:type,label:""};EDIT.actions.push(a);renderEditor();}
 function rmAction(i){captureEditor();EDIT.actions.splice(i,1);renderEditor();}
-async function pickFile(i){captureEditor();const inp=$("af_"+i),f=inp&&inp.files&&inp.files[0];if(!f)return;try{const data=await readFile(f);EDIT.actions[i]={type:"fichier",name:f.name,mime:f.type,data:data};renderEditor();}catch(e){alert("Impossible de lire le fichier.");}}
-async function pickPhoto(i){captureEditor();const inp=$("ap_"+i),f=inp&&inp.files&&inp.files[0];if(!f)return;try{const data=await readImage(f);EDIT.actions[i]={type:"photo",name:f.name||"photo.jpg",data:data};renderEditor();}catch(e){alert("Impossible de lire la photo.");}}
+async function pickFile(i){captureEditor();const inp=$("af_"+i),f=inp&&inp.files&&inp.files[0];if(!f)return;try{const data=await readFile(f);const lbl=((EDIT.actions[i]&&EDIT.actions[i].label)||"").trim()||f.name;EDIT.actions[i]={type:"fichier",label:lbl,name:f.name,mime:f.type,data:data};renderEditor();}catch(e){alert("Impossible de lire le fichier.");}}
+async function pickPhoto(i){captureEditor();const inp=$("ap_"+i),f=inp&&inp.files&&inp.files[0];if(!f)return;try{const data=await readImage(f);const lbl=((EDIT.actions[i]&&EDIT.actions[i].label)||"").trim()||(f.name||"Photo");EDIT.actions[i]={type:"photo",label:lbl,name:f.name||"photo.jpg",data:data};renderEditor();}catch(e){alert("Impossible de lire la photo.");}}
 function renderEditor(){
   const e=EDIT,isNew=EDIT_CTX.eid===null;
   const jourSel=`<div class="field"><label>Journée</label><select id="f_jour">${trip().jours.map(j=>`<option value="${j.id}" ${j.id===EDIT_CTX.jid?"selected":""}>${esc(dShort(j.date))} — ${esc(j.titre)}</option>`).join("")}</select></div>`;
   const champsRows=(e.champs||[]).map((c,i)=>`<div class="lienrow"><input id="cl_${i}" value="${esc(c.label)}" placeholder="Nom du champ (ex. Compagnie)"><input id="cv_${i}" value="${esc(c.value)}" placeholder="Valeur"><button class="btn ghost sm" style="margin-top:6px;color:var(--coral)" onclick="rmChamp(${i})">Supprimer ce champ</button></div>`).join("");
   const actRows=(e.actions||[]).map((a,i)=>{
     const rm=`<button class="btn ghost sm" style="margin-top:6px;color:var(--coral)" onclick="rmAction(${i})">Retirer</button>`;
-    if(a.type==="lien")return `<div class="actrow"><div class="ah">🔗 Lien</div><input id="al_${i}" value="${esc(a.label)}" placeholder="Libellé (ex. TripAdvisor)"><input id="au_${i}" value="${esc(a.url)}" inputmode="url" placeholder="https://…">${rm}</div>`;
-    if(a.type==="plan")return `<div class="actrow"><div class="ah">🧭 Plan (itinéraire)</div><input id="ad_${i}" value="${esc(a.depart)}" placeholder="Départ (ex. Elounda)"><input id="aa_${i}" value="${esc(a.arrivee)}" placeholder="Arrivée (ex. Plaka)">${rm}</div>`;
-    if(a.type==="fichier")return `<div class="actrow"><div class="ah">📄 Fichier</div><label class="filebtn">${a.data?"Remplacer le fichier":"Choisir un fichier"}<input type="file" id="af_${i}" onchange="pickFile(${i})"></label>${a.name?`<div style="margin-top:6px;font-size:13px;color:var(--ink-2)">${esc(a.name)}</div>`:""}${rm}</div>`;
-    if(a.type==="photo")return `<div class="actrow"><div class="ah">🖼 Photo</div><label class="filebtn">${a.data?"Remplacer la photo":"Choisir une photo"}<input type="file" accept="image/*" id="ap_${i}" onchange="pickPhoto(${i})"></label>${a.data?`<div style="margin-top:8px"><img src="${a.data}" style="max-width:100%;max-height:140px;border-radius:8px"></div>`:""}${rm}</div>`;
+    const lab=`<input id="al_${i}" value="${esc(a.label||"")}" placeholder="Intitulé (ce qui s'affiche dans la fiche)">`;
+    if(a.type==="lien")return `<div class="actrow"><div class="ah">🔗 Lien</div>${lab}<input id="au_${i}" value="${esc(a.url)}" inputmode="url" placeholder="https://…">${rm}</div>`;
+    if(a.type==="plan")return `<div class="actrow"><div class="ah">🧭 Plan (itinéraire)</div>${lab}<input id="ad_${i}" value="${esc(a.depart)}" placeholder="Départ (ex. Elounda)"><input id="aa_${i}" value="${esc(a.arrivee)}" placeholder="Arrivée (ex. Plaka)">${rm}</div>`;
+    if(a.type==="fichier")return `<div class="actrow"><div class="ah">📄 Fichier</div>${lab}<label class="filebtn">${a.data?"Remplacer le fichier":"Choisir un fichier"}<input type="file" id="af_${i}" onchange="pickFile(${i})"></label>${a.name?`<div style="margin-top:6px;font-size:13px;color:var(--ink-2)">${esc(a.name)}</div>`:""}${rm}</div>`;
+    if(a.type==="photo")return `<div class="actrow"><div class="ah">🖼 Photo</div>${lab}<label class="filebtn">${a.data?"Remplacer la photo":"Choisir une photo"}<input type="file" accept="image/*" id="ap_${i}" onchange="pickPhoto(${i})"></label>${a.data?`<div style="margin-top:8px"><img src="${a.data}" style="max-width:100%;max-height:140px;border-radius:8px"></div>`:""}${rm}</div>`;
     return "";
   }).join("");
   openSheet(`<h2>${isNew?"Nouvelle étape":"Modifier l'étape"}</h2>
