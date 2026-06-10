@@ -111,7 +111,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v9";
+const VERSION="v10";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -185,7 +185,7 @@ function renderItin(){
     return `<div class="day-h"><span class="d">${dShort(j.date)}</span><span class="t">${esc(j.titre)}</span><span class="edit" onclick="editDay('${j.id}')">Modifier</span></div>${evs}`;
   }).join("");
   $("app").innerHTML=`
-    <div class="top"><span class="sp"></span><h1>${esc(t.titre)}</h1><button class="add" onclick="addEvent()">+</button></div>
+    <div class="top"><span class="sp"></span><h1>${esc(t.titre)} (${VERSION})</h1><button class="add" onclick="addEvent()">+</button></div>
     <div class="wrap">${t.jours.length?days:'<div class="empty">Aucune journée.</div>'}
       <button class="addday" onclick="editDay()">+ Ajouter une journée</button>
       <div class="ver">Mes Voyages · ${VERSION}</div>
