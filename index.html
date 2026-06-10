@@ -128,7 +128,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v17";
+const VERSION="v18";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -212,7 +212,7 @@ function renderItin(){
     <div class="top"><span class="sp"></span><h1>${esc(t.titre)} (${VERSION})</h1><button class="add" onclick="addEvent()">+</button></div>
     <div class="wrap">${t.jours.length?days:'<div class="empty">Aucune journée.</div>'}
       <button class="addday" onclick="editDay()">+ Ajouter une journée</button>
-      <div class="ver">Mes Voyages · ${VERSION} · <a onclick="resetTrip()" style="color:var(--coral);text-decoration:underline">recharger le modèle</a></div>
+      <div class="ver">Mes Voyages · ${VERSION}</div>
     </div>`;
 }
 
@@ -255,7 +255,6 @@ function closeImg(){$("imgView").classList.remove("on");$("imgView").innerHTML="
 function openAtt(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.data)return;try{const url=URL.createObjectURL(dataUrlToBlob(a.data));window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(err){const w=window.open();if(w)w.location=a.data;}}
 function back(){view="itin";cur=null;render();}
 async function toggleDone(jid,eid){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);e.statut=e.statut==="fait"?"prevu":"fait";await save();render();}
-async function resetTrip(){if(!confirm("Recharger le voyage d'origine ?\n\nCela REMPLACE tout par le modèle à jour et EFFACE tes modifications locales (étapes ajoutées, photos, fichiers).\n\nÀ utiliser après une mise à jour de l'appli."))return;DATA=seed();await save();view="itin";cur=null;render();}
 
 /* ---- sheet ---- */
 function openSheet(html){$("sheet").innerHTML=html;$("sheetBg").classList.add("on");}
