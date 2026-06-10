@@ -128,7 +128,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v18";
+const VERSION="v19";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -209,7 +209,7 @@ function renderItin(){
     return `<div class="day-h"><span class="d">${dShort(j.date)}</span><span class="t">${esc(j.titre)}</span><span class="edit" onclick="editDay('${j.id}')">Modifier</span></div>${evs}`;
   }).join("");
   $("app").innerHTML=`
-    <div class="top"><span class="sp"></span><h1>${esc(t.titre)} (${VERSION})</h1><button class="add" onclick="addEvent()">+</button></div>
+    <div class="top"><span class="sp"></span><h1>${esc(t.titre)} (${VERSION})</h1><button class="add" onclick="editDay()">+</button></div>
     <div class="wrap">${t.jours.length?days:'<div class="empty">Aucune journée.</div>'}
       <button class="addday" onclick="editDay()">+ Ajouter une journée</button>
       <div class="ver">Mes Voyages · ${VERSION}</div>
@@ -266,9 +266,9 @@ const val=id=>{const el=$(id);return el?el.value.trim():"";};
 let EDIT=null,EDIT_CTX=null;
 function editEvent(jid,eid){const j=trip().jours.find(x=>x.id===jid);const e=j.etapes.find(x=>x.id===eid);
   EDIT=JSON.parse(JSON.stringify(e));EDIT_CTX={jid:jid,eid:eid,origJid:jid};renderEditor();}
-function addEvent(){const first=trip().jours[0];
+function addEvent(jid){const first=trip().jours[0];
   EDIT={id:uid(),debut:"",fin:"",groupe:"Visite",titre:"",cout:"",reserve:null,champs:defChamps("Visite"),actions:[],notes:"",statut:"prevu"};
-  EDIT_CTX={jid:first?first.id:null,eid:null,origJid:null};renderEditor();}
+  EDIT_CTX={jid:jid||(first?first.id:null),eid:null,origJid:null};renderEditor();}
 function captureEditor(){
   EDIT.debut=val("f_debut");EDIT.fin=val("f_fin");EDIT.groupe=$("f_groupe").value;EDIT.cout=val("f_cout");EDIT.titre=val("f_titre");
   const rs=$("f_reserve").value;EDIT.reserve=rs===""?null:rs==="1";
@@ -334,11 +334,17 @@ async function delEvent(jid,eid){if(!confirm("Supprimer cette étape ?"))return;
 
 /* ---- day editor ---- */
 function editDay(jid){const j=jid?trip().jours.find(x=>x.id===jid):null;
+  let steps="";
+  if(j){sortDay(j);steps=(j.etapes||[]).map(e=>`<div class="actrow" style="display:flex;align-items:center;gap:10px;padding:9px 11px"><div style="flex:1;min-width:0" onclick="dayEditStep('${jid}','${e.id}')"><div style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(etName(e))}</div><div style="font-size:12px;color:var(--ink-2)">${esc((e.debut||"")+(e.fin?" – "+e.fin:"")||"—")} · ${esc(e.groupe||"")}</div></div><button class="btn ghost sm" style="color:var(--coral);width:auto;margin:0;padding:6px 11px" onclick="dayRmStep('${jid}','${e.id}')">✕</button></div>`).join("");}
   openSheet(`<h2>${j?"Modifier la journée":"Nouvelle journée"}</h2>
     <div class="field"><label>Date</label><input id="d_date" type="date" value="${j?j.date||"":""}"></div>
     <div class="field"><label>Titre</label><input id="d_titre" value="${esc(j?j.titre:"")}" placeholder="ex. Spinalonga & Agios Nikolaos"></div>
+    ${j?`<div class="field"><label>Étapes</label>${steps||'<div style="font-size:13px;color:var(--ink-2);margin-bottom:8px">Aucune étape pour le moment.</div>'}<button class="btn ghost sm" onclick="dayAddStep('${jid}')">+ Ajouter une étape</button></div>`:`<div style="font-size:13px;color:var(--ink-2);margin:2px 0 14px">Enregistre d'abord la journée, tu pourras ensuite y ajouter des étapes.</div>`}
     <button class="btn primary" onclick="saveDay('${jid||""}')">Enregistrer</button>
     ${j?`<button class="btn del" onclick="delDay('${jid}')">Supprimer la journée</button>`:""}`);}
+function dayAddStep(jid){const j=trip().jours.find(x=>x.id===jid);if(j){j.date=val("d_date")||j.date;j.titre=val("d_titre")||j.titre;}addEvent(jid);}
+function dayEditStep(jid,eid){const j=trip().jours.find(x=>x.id===jid);if(j){j.date=val("d_date")||j.date;j.titre=val("d_titre")||j.titre;}editEvent(jid,eid);}
+async function dayRmStep(jid,eid){if(!confirm("Supprimer cette étape ?"))return;const j=trip().jours.find(x=>x.id===jid);j.etapes=j.etapes.filter(x=>x.id!==eid);await save();editDay(jid);}
 async function saveDay(jid){const t=trip();
   if(jid){const j=t.jours.find(x=>x.id===jid);j.date=val("d_date");j.titre=val("d_titre");}
   else t.jours.push({id:uid(),date:val("d_date"),titre:val("d_titre")||"Journée",etapes:[]});
