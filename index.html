@@ -97,8 +97,8 @@ a{color:inherit;text-decoration:none}
 .sheet h2{font-family:var(--serif);font-size:20px;margin-bottom:14px}
 .field{margin-bottom:13px}
 .field label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);margin-bottom:5px}
-.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff;color:var(--ink)}
-.field.r2{display:flex;gap:10px}.field.r2>div{flex:1}
+.field input,.field select,.field textarea{width:100%;min-width:0;max-width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff;color:var(--ink)}
+.field.r2{display:flex;gap:10px}.field.r2>div{flex:1;min-width:0}
 .lienrow{border:1px solid var(--line);border-radius:10px;padding:9px;margin-bottom:8px;background:#fff}
 .lienrow input{margin-bottom:6px}
 .lienrow input:last-of-type{margin-bottom:0}
@@ -111,7 +111,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v8";
+const VERSION="v9";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -137,6 +137,12 @@ const GROUPS={
 const GROUP_NAMES=Object.keys(GROUPS);
 function fToChamps(groupe,f){f=f||{};const defs=GROUPS[groupe]||[];const out=defs.map(([k,l])=>({label:l,value:f[k]||""}));
   Object.keys(f).forEach(k=>{if(!defs.some(d=>d[0]===k)&&f[k])out.push({label:k,value:f[k]});});return out;}
+const NAME_L=["nom"],ADDR_L=["adresse","adresse / lieu","lieu"],TEL_L=["téléphone","telephone","tél","tel"];
+function chFind(e,set){return (e.champs||[]).find(c=>set.includes((c.label||"").trim().toLowerCase()));}
+function etName(e){const c=chFind(e,NAME_L);if(c&&c.value)return c.value;const f=(e.champs||[]).find(c=>c.value);return f?f.value:"(sans nom)";}
+function etAddr(e){const c=chFind(e,ADDR_L);return c?c.value:"";}
+function etTel(e){const c=chFind(e,TEL_L);return c?c.value:"";}
+function defChamps(groupe){const base=["Nom","Adresse","Téléphone"];const grp=(GROUPS[groupe]||[]).map(([k,l])=>l);return base.concat(grp).map(l=>({label:l,value:""}));}
 
 /* ---- storage ---- */
 let DB=null,MEM={},useMem=false;
@@ -150,7 +156,15 @@ let DATA=null,view="itin",cur=null;
 async function save(){await putKV("data",DATA);}
 async function load(){const s=await getKV("data");if(s){DATA=s;migrate();}else{DATA=seed();}await save();}
 function migrate(){const t=DATA.trip;if(!t)return;(t.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>{
-  if(e.champs===undefined){e.champs=fToChamps(e.groupe,e.f||{});delete e.f;}}));}
+  if(e.champs===undefined){e.champs=fToChamps(e.groupe,e.f||{});delete e.f;}
+  if("nom"in e||"lieu"in e||"tel"in e){
+    const has=l=>e.champs.some(c=>(c.label||"").trim().toLowerCase()===l.toLowerCase());
+    const head=[];
+    if(!has("Nom"))head.push({label:"Nom",value:e.nom||""});
+    if(!has("Adresse"))head.push({label:"Adresse",value:e.lieu||""});
+    if(!has("Téléphone"))head.push({label:"Téléphone",value:e.tel||""});
+    e.champs=head.concat(e.champs);delete e.nom;delete e.lieu;delete e.tel;
+  }}));}
 const trip=()=>DATA.trip;
 function sortDay(j){if(j&&j.etapes)j.etapes.sort((a,b)=>(a.debut||"99:99").localeCompare(b.debut||"99:99"));}
 
@@ -165,7 +179,7 @@ function renderItin(){
         <div class="time">${timeStack(e)}</div>
         <div class="rail"><span class="dot"></span></div>
         <div class="c" onclick="openDetail('${j.id}','${e.id}')">
-          <div class="txt"><div class="ttl">${esc(e.nom)}</div><div class="sub">${esc(e.groupe||"")}</div></div>
+          <div class="txt"><div class="ttl">${esc(etName(e))}</div><div class="sub">${esc(e.groupe||"")}</div></div>
           <span class="chev">›</span></div>
       </div>`).join("")||'<div class="ev"><div class="time"></div><div class="rail"><span class="dot"></span></div><div class="c"><div class="txt"><div class="sub">Aucune étape</div></div></div></div>';
     return `<div class="day-h"><span class="d">${dShort(j.date)}</span><span class="t">${esc(j.titre)}</span><span class="edit" onclick="editDay('${j.id}')">Modifier</span></div>${evs}`;
@@ -181,21 +195,21 @@ function renderItin(){
 function renderDetail(){
   const j=trip().jours.find(x=>x.id===cur.jid);const e=j&&j.etapes.find(x=>x.id===cur.eid);
   if(!e){view="itin";return render();}
-  const q=encodeURIComponent([e.nom,e.lieu].filter(Boolean).join(" "));
+  const nm=etName(e),addr=etAddr(e),tel=etTel(e);
+  const q=encodeURIComponent(addr||(nm!=="(sans nom)"?nm:""));
   const rows=[];
-  (e.champs||[]).forEach(c=>{if(c.value)rows.push(`<div class="row"><span class="k">${esc(c.label||"—")}</span><span class="v">${esc(c.value)}</span></div>`);});
-  if(e.lieu)rows.push(`<div class="row"><span class="k">Adresse</span><span class="v">${esc(e.lieu)}</span></div>`);
+  (e.champs||[]).forEach(c=>{if(c.value&&(c.label||"").trim().toLowerCase()!=="nom")rows.push(`<div class="row"><span class="k">${esc(c.label||"—")}</span><span class="v">${esc(c.value)}</span></div>`);});
   if(e.cout)rows.push(`<div class="row cost"><span class="k">Coût</span><span class="v">${esc(e.cout)}</span></div>`);
   const reservePill=e.reserve===true?'<span class="pill ok">Réservé</span>':e.reserve===false?'<span class="pill no">À réserver</span>':"";
   const acts=[];
-  if(e.lieu||e.nom)acts.push(`<a class="act" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener"><span class="ic">📍</span><span>Plan / itinéraire</span><span class="go">›</span></a>`);
-  if(e.tel)acts.push(`<a class="act" href="tel:${esc(e.tel).replace(/\s/g,'')}"><span class="ic">📞</span><span>Appeler${e.tel?" — "+esc(e.tel):""}</span><span class="go">›</span></a>`);
+  if(addr||nm!=="(sans nom)")acts.push(`<a class="act" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener"><span class="ic">📍</span><span>Plan / itinéraire</span><span class="go">›</span></a>`);
+  if(tel)acts.push(`<a class="act" href="tel:${esc(tel).replace(/\s/g,'')}"><span class="ic">📞</span><span>Appeler — ${esc(tel)}</span><span class="go">›</span></a>`);
   (e.liens||[]).forEach(l=>{if(l.label||l.url)acts.push(`<a class="act" ${l.url?`href="${esc(l.url)}" target="_blank" rel="noopener"`:""}><span class="ic">🔗</span><span>${esc(l.label||"Lien")}</span><span class="go">›</span></a>`);});
   $("app").innerHTML=`
     <div class="top"><button class="back" onclick="back()">‹ Itinéraire</button><h1>${esc(j.titre)}</h1><span class="sp"></span></div>
     <div class="wrap">
       <div class="eyebrow">${[timeStack(e).replace("<br>"," – "),e.groupe].filter(Boolean).join(" · ")}</div>
-      <div class="d-title">${esc(e.nom)}</div>
+      <div class="d-title">${esc(nm)}</div>
       ${reservePill}
       <div class="statusbar"><div class="chk ${e.statut==='fait'?'on':''}" onclick="toggleDone('${j.id}','${e.id}')">${e.statut==='fait'?'✓':''}</div>
         <span style="font-size:13px;color:var(--ink-2)">${e.statut==='fait'?'Fait':'À faire'}</span></div>
@@ -223,18 +237,17 @@ let EDIT=null,EDIT_CTX=null;
 function editEvent(jid,eid){const j=trip().jours.find(x=>x.id===jid);const e=j.etapes.find(x=>x.id===eid);
   EDIT=JSON.parse(JSON.stringify(e));EDIT_CTX={jid:jid,eid:eid,origJid:jid};renderEditor();}
 function addEvent(){const first=trip().jours[0];
-  EDIT={id:uid(),debut:"",fin:"",groupe:"Visite",nom:"",lieu:"",tel:"",cout:"",reserve:null,champs:fToChamps("Visite",{}),liens:[],notes:"",statut:"prevu"};
+  EDIT={id:uid(),debut:"",fin:"",groupe:"Visite",cout:"",reserve:null,champs:defChamps("Visite"),liens:[],notes:"",statut:"prevu"};
   EDIT_CTX={jid:first?first.id:null,eid:null,origJid:null};renderEditor();}
 function captureEditor(){
-  EDIT.debut=val("f_debut");EDIT.fin=val("f_fin");EDIT.groupe=$("f_groupe").value;EDIT.nom=val("f_nom");
-  EDIT.lieu=val("f_lieu");EDIT.tel=val("f_tel");EDIT.cout=val("f_cout");
+  EDIT.debut=val("f_debut");EDIT.fin=val("f_fin");EDIT.groupe=$("f_groupe").value;EDIT.cout=val("f_cout");
   const rs=$("f_reserve").value;EDIT.reserve=rs===""?null:rs==="1";
   EDIT.champs=(EDIT.champs||[]).map((c,i)=>({label:$("cl_"+i)?$("cl_"+i).value.trim():c.label,value:$("cv_"+i)?$("cv_"+i).value.trim():c.value}));
   EDIT.liens=(EDIT.liens||[]).map((l,i)=>({label:$("lk_"+i)?$("lk_"+i).value.trim():l.label,url:$("lu_"+i)?$("lu_"+i).value.trim():l.url}));
   EDIT.notes=$("f_notes")?$("f_notes").value:EDIT.notes;
   if($("f_jour"))EDIT_CTX.jid=$("f_jour").value;
 }
-function onGroupChange(){captureEditor();if((EDIT.champs||[]).every(c=>!c.value))EDIT.champs=fToChamps(EDIT.groupe,{});renderEditor();}
+function onGroupChange(){captureEditor();if((EDIT.champs||[]).every(c=>!c.value))EDIT.champs=defChamps(EDIT.groupe);renderEditor();}
 function addChamp(){captureEditor();EDIT.champs=EDIT.champs||[];EDIT.champs.push({label:"",value:""});renderEditor();}
 function rmChamp(i){captureEditor();EDIT.champs.splice(i,1);renderEditor();}
 function addLien(){captureEditor();EDIT.liens.push({label:"",url:""});renderEditor();}
@@ -249,18 +262,15 @@ function renderEditor(){
     <div class="field r2"><div><label>Début</label><input id="f_debut" type="time" value="${e.debut||""}"></div>
       <div><label>Fin</label><input id="f_fin" type="time" value="${e.fin||""}"></div></div>
     <div class="field"><label>Groupe</label><select id="f_groupe" onchange="onGroupChange()">${GROUP_NAMES.map(g=>`<option ${g===e.groupe?"selected":""}>${g}</option>`).join("")}</select></div>
-    <div class="field"><label>Nom</label><input id="f_nom" value="${esc(e.nom)}" placeholder="ex. Vol Paris → Héraklion"></div>
-    <div class="field"><label>Adresse / lieu (pour le plan)</label><input id="f_lieu" value="${esc(e.lieu)}"></div>
-    <div class="field"><label>Infos (champs libres)</label>${champsRows}<button class="btn ghost sm" onclick="addChamp()">+ Ajouter un champ</button></div>
-    <div class="field r2"><div><label>Téléphone</label><input id="f_tel" value="${esc(e.tel)}" inputmode="tel"></div>
-      <div><label>Coût</label><input id="f_cout" value="${esc(e.cout)}" placeholder="ex. 320 €"></div></div>
-    <div class="field"><label>Réservé</label><select id="f_reserve"><option value="">—</option><option value="1" ${e.reserve===true?"selected":""}>Oui</option><option value="0" ${e.reserve===false?"selected":""}>Non</option></select></div>
+    <div class="field"><label>Infos (champs libres — nom, adresse, téléphone…)</label>${champsRows}<button class="btn ghost sm" onclick="addChamp()">+ Ajouter un champ</button></div>
+    <div class="field r2"><div><label>Coût</label><input id="f_cout" value="${esc(e.cout)}" placeholder="ex. 320 €"></div>
+      <div><label>Réservé</label><select id="f_reserve"><option value="">—</option><option value="1" ${e.reserve===true?"selected":""}>Oui</option><option value="0" ${e.reserve===false?"selected":""}>Non</option></select></div></div>
     <div class="field"><label>Liens</label>${liens}<button class="btn ghost sm" onclick="addLien()">+ Ajouter un lien</button></div>
     <div class="field"><label>Notes</label><textarea id="f_notes" style="min-height:80px">${esc(e.notes)}</textarea></div>
     <button class="btn primary" onclick="saveEvent()">Enregistrer</button>
     ${isNew?"":`<button class="btn del" onclick="delEvent('${EDIT_CTX.jid}','${EDIT_CTX.eid}')">Supprimer l'étape</button>`}`);
 }
-async function saveEvent(){captureEditor();if(!EDIT.nom){alert("Donne un nom à l'étape.");return;}
+async function saveEvent(){captureEditor();if(!(EDIT.champs||[]).some(c=>c.value)){alert("Renseigne au moins le nom de l'étape.");return;}
   EDIT.liens=(EDIT.liens||[]).filter(l=>l.label||l.url);
   EDIT.champs=(EDIT.champs||[]).filter(c=>c.label||c.value);
   const target=trip().jours.find(x=>x.id===EDIT_CTX.jid);if(!target)return;
@@ -290,7 +300,13 @@ async function delDay(jid){if(!confirm("Supprimer cette journée et ses étapes 
   trip().jours=trip().jours.filter(x=>x.id!==jid);await save();closeSheet();render();}
 
 /* ---- seed : la Crète ---- */
-function ev(debut,fin,groupe,nom,o){o=o||{};const e={id:uid(),debut:debut||"",fin:fin||"",groupe:groupe,nom:nom,lieu:o.lieu||"",tel:o.tel||"",cout:o.cout||"",champs:fToChamps(groupe,o.f),liens:o.liens||[],notes:o.notes||"",statut:"prevu"};e.reserve=("reserve"in o)?o.reserve:null;return e;}
+function ev(debut,fin,groupe,nom,o){o=o||{};
+  const champs=[{label:"Nom",value:nom||""},{label:"Adresse",value:o.lieu||""},{label:"Téléphone",value:o.tel||""}];
+  const f=o.f||{},defs=GROUPS[groupe]||[];
+  defs.forEach(([k,l])=>champs.push({label:l,value:f[k]||""}));
+  Object.keys(f).forEach(k=>{if(!defs.some(d=>d[0]===k)&&f[k])champs.push({label:k,value:f[k]});});
+  const e={id:uid(),debut:debut||"",fin:fin||"",groupe:groupe,cout:o.cout||"",champs:champs,liens:o.liens||[],notes:o.notes||"",statut:"prevu"};
+  e.reserve=("reserve"in o)?o.reserve:null;return e;}
 function day(date,titre,etapes){return{id:uid(),date:date,titre:titre,etapes:etapes};}
 function seed(){
   return {version:VERSION,trip:{titre:"Crète — Anniversaire",jours:[
