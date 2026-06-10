@@ -131,14 +131,15 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v21";
+const VERSION="v22";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 function readFile(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
 function readImage(file,max=1600,q=0.82){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>max||h>max){const s=Math.min(max/w,max/h);w=Math.round(w*s);h=Math.round(h*s);}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);res(c.toDataURL("image/jpeg",q));};img.onerror=rej;img.src=r.result;};r.onerror=rej;r.readAsDataURL(file);});}
 function dataUrlToBlob(d){const p=d.split(",");const mime=(p[0].match(/:(.*?);/)||[])[1]||"application/octet-stream";const bin=atob(p[1]);const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);return new Blob([u],{type:mime});}
-function dirUrl(dep,arr){return "https://maps.apple.com/?"+(dep?("saddr="+encodeURIComponent(dep)+"&"):"")+"daddr="+encodeURIComponent(arr||"");}
+function dirUrl(dep,arr){return "https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(dep||"")+"&destination="+encodeURIComponent(arr||"");}
+function mapUrl(adr){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(adr||"");}
 const FR_D=["dim","lun","mar","mer","jeu","ven","sam"],FR_M=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
 function dShort(iso){if(!iso)return"";const d=new Date(iso+"T12:00");return FR_D[d.getDay()]+" "+d.getDate()+" "+FR_M[d.getMonth()];}
 function fmtTime(s){return s?String(s).replace(":","h"):"";}
@@ -190,6 +191,7 @@ function migrate(){const t=DATA.trip;if(!t)return;(t.jours||[]).forEach(j=>(j.et
     e.champs=head.concat(e.champs);delete e.nom;delete e.lieu;delete e.tel;
   }
   if(e.actions===undefined){e.actions=(e.liens||[]).filter(l=>l&&(l.label||l.url)).map(l=>({type:"lien",label:l.label||"",url:l.url||""}));delete e.liens;}
+  (e.actions||[]).forEach(a=>{if(a.type==="plan")a.type="itineraire";});
   if(e.titre===undefined){const ni=(e.champs||[]).findIndex(c=>(c.label||"").trim().toLowerCase()==="nom");if(ni>=0){e.titre=e.champs[ni].value||"";e.champs.splice(ni,1);}else e.titre="";}
 }));}
 const trip=()=>DATA.trip;
@@ -231,7 +233,8 @@ function renderDetail(){
   const acts=[];
   (e.actions||[]).forEach((a,ai)=>{
     if(a.type==="lien"&&(a.label||a.url))acts.push(`<a class="act" ${a.url?`href="${esc(a.url)}" target="_blank" rel="noopener"`:""}><span class="ic">🔗</span><span>${esc(a.label||a.url||"Lien")}</span><span class="go">›</span></a>`);
-    else if(a.type==="plan"&&(a.depart||a.arrivee))acts.push(`<a class="act" href="${dirUrl(a.depart,a.arrivee)}" target="_blank" rel="noopener"><span class="ic">🧭</span><span>${esc(a.label||((a.depart||"?")+" → "+(a.arrivee||"?")))}</span><span class="go">›</span></a>`);
+    else if(a.type==="adresse"&&a.adresse)acts.push(`<a class="act" href="${mapUrl(a.adresse)}" target="_blank" rel="noopener"><span class="ic">📍</span><span>${esc(a.label||a.adresse)}</span><span class="go">›</span></a>`);
+    else if(a.type==="itineraire"&&(a.depart||a.arrivee))acts.push(`<a class="act" href="${dirUrl(a.depart,a.arrivee)}" target="_blank" rel="noopener"><span class="ic">🧭</span><span>${esc(a.label||((a.depart||"?")+" → "+(a.arrivee||"?")))}</span><span class="go">›</span></a>`);
     else if(a.type==="fichier"&&a.data)acts.push(`<a class="act" onclick="openAtt('${j.id}','${e.id}',${ai})"><span class="ic">📄</span><span>${esc(a.label||a.name||"Fichier")}</span><span class="go">›</span></a>`);
     else if(a.type==="photo"&&a.data)acts.push(`<a class="act" onclick="openImg('${j.id}','${e.id}',${ai})"><span class="ic">🖼</span><span>${esc(a.label||a.name||"Photo")}</span><span class="go">›</span></a>`);
     else if(a.type==="audio"&&a.texte){const pl=SPK&&SPK.jid===j.id&&SPK.eid===e.id&&SPK.ai===ai;acts.push(`<a class="act" onclick="speakAction('${j.id}','${e.id}',${ai})"><span class="ic">${pl?"⏸":"🔊"}</span><span>${pl?"Lecture en cours… (toucher pour arrêter)":esc(a.label||"Audio")}</span><span class="go">›</span></a>`);}
@@ -290,7 +293,8 @@ function captureEditor(){
   EDIT.actions=(EDIT.actions||[]).map((a,i)=>{
     const label=$("al_"+i)?$("al_"+i).value.trim():(a.label||"");
     if(a.type==="lien")return{type:"lien",label:label,url:$("au_"+i)?$("au_"+i).value.trim():a.url};
-    if(a.type==="plan")return{type:"plan",label:label,depart:$("ad_"+i)?$("ad_"+i).value.trim():a.depart,arrivee:$("aa_"+i)?$("aa_"+i).value.trim():a.arrivee};
+    if(a.type==="adresse")return{type:"adresse",label:label,adresse:$("aad_"+i)?$("aad_"+i).value.trim():a.adresse};
+    if(a.type==="itineraire")return{type:"itineraire",label:label,depart:$("ad_"+i)?$("ad_"+i).value.trim():a.depart,arrivee:$("aa_"+i)?$("aa_"+i).value.trim():a.arrivee};
     if(a.type==="audio")return{type:"audio",label:label,texte:$("at_"+i)?$("at_"+i).value:(a.texte||"")};
     return Object.assign({},a,{label:label});
   });
@@ -300,7 +304,7 @@ function captureEditor(){
 function onGroupChange(){captureEditor();if((EDIT.champs||[]).every(c=>!c.value))EDIT.champs=defChamps(EDIT.groupe);renderEditor();}
 function addChamp(){captureEditor();EDIT.champs=EDIT.champs||[];EDIT.champs.push({label:"",value:""});renderEditor();}
 function rmChamp(i){captureEditor();EDIT.champs.splice(i,1);renderEditor();}
-function addAction(type){captureEditor();EDIT.actions=EDIT.actions||[];const a=type==="lien"?{type:"lien",label:"",url:""}:type==="plan"?{type:"plan",label:"",depart:"",arrivee:""}:type==="audio"?{type:"audio",label:"",texte:""}:{type:type,label:""};EDIT.actions.push(a);renderEditor();}
+function addAction(type){captureEditor();EDIT.actions=EDIT.actions||[];const a=type==="lien"?{type:"lien",label:"",url:""}:type==="adresse"?{type:"adresse",label:"",adresse:""}:type==="itineraire"?{type:"itineraire",label:"",depart:"",arrivee:""}:type==="audio"?{type:"audio",label:"",texte:""}:{type:type,label:""};EDIT.actions.push(a);renderEditor();}
 function rmAction(i){captureEditor();EDIT.actions.splice(i,1);renderEditor();}
 async function pickFile(i){captureEditor();const inp=$("af_"+i),f=inp&&inp.files&&inp.files[0];if(!f)return;try{const data=await readFile(f);const lbl=((EDIT.actions[i]&&EDIT.actions[i].label)||"").trim()||f.name;EDIT.actions[i]={type:"fichier",label:lbl,name:f.name,mime:f.type,data:data};renderEditor();}catch(e){alert("Impossible de lire le fichier.");}}
 async function pickPhoto(i){captureEditor();const inp=$("ap_"+i),f=inp&&inp.files&&inp.files[0];if(!f)return;try{const data=await readImage(f);const lbl=((EDIT.actions[i]&&EDIT.actions[i].label)||"").trim()||(f.name||"Photo");EDIT.actions[i]={type:"photo",label:lbl,name:f.name||"photo.jpg",data:data};renderEditor();}catch(e){alert("Impossible de lire la photo.");}}
@@ -312,7 +316,8 @@ function renderEditor(){
     const rm=`<button class="btn ghost sm" style="margin-top:6px;color:var(--coral)" onclick="rmAction(${i})">Retirer</button>`;
     const lab=`<input id="al_${i}" value="${esc(a.label||"")}" placeholder="Intitulé (ce qui s'affiche dans la fiche)">`;
     if(a.type==="lien")return `<div class="actrow"><div class="ah">🔗 Lien</div>${lab}<input id="au_${i}" value="${esc(a.url)}" inputmode="url" placeholder="https://…">${rm}</div>`;
-    if(a.type==="plan")return `<div class="actrow"><div class="ah">🧭 Plan (itinéraire)</div>${lab}<input id="ad_${i}" value="${esc(a.depart)}" placeholder="Départ (ex. Elounda)"><input id="aa_${i}" value="${esc(a.arrivee)}" placeholder="Arrivée (ex. Plaka)">${rm}</div>`;
+    if(a.type==="adresse")return `<div class="actrow"><div class="ah">📍 Plans</div>${lab}<input id="aad_${i}" value="${esc(a.adresse)}" placeholder="Adresse / lieu (ex. Archontiko, Agios Nikolaos)">${rm}</div>`;
+    if(a.type==="itineraire")return `<div class="actrow"><div class="ah">🧭 Itinéraire</div>${lab}<input id="ad_${i}" value="${esc(a.depart)}" placeholder="Départ (ex. Elounda)"><input id="aa_${i}" value="${esc(a.arrivee)}" placeholder="Arrivée (ex. Plaka)">${rm}</div>`;
     if(a.type==="fichier")return `<div class="actrow"><div class="ah">📄 Fichier</div>${lab}<label class="filebtn">${a.data?"Remplacer le fichier":"Choisir un fichier"}<input type="file" id="af_${i}" onchange="pickFile(${i})"></label>${a.name?`<div style="margin-top:6px;font-size:13px;color:var(--ink-2)">${esc(a.name)}</div>`:""}${rm}</div>`;
     if(a.type==="photo")return `<div class="actrow"><div class="ah">🖼 Photo</div>${lab}<label class="filebtn">${a.data?"Remplacer la photo":"Choisir une photo"}<input type="file" accept="image/*" id="ap_${i}" onchange="pickPhoto(${i})"></label>${a.data?`<div style="margin-top:8px"><img src="${a.data}" style="max-width:100%;max-height:140px;border-radius:8px"></div>`:""}${rm}</div>`;
     if(a.type==="audio")return `<div class="actrow"><div class="ah">🔊 Audio — texte lu à voix haute</div>${lab}<textarea id="at_${i}" style="min-height:96px" placeholder="Texte du chapitre à écouter…">${esc(a.texte||"")}</textarea>${rm}</div>`;
@@ -328,13 +333,13 @@ function renderEditor(){
     <div class="field r2"><div><label>Coût</label><input id="f_cout" value="${esc(e.cout)}" placeholder="ex. 320 €"></div>
       <div><label>Réservé</label><select id="f_reserve"><option value="">—</option><option value="1" ${e.reserve===true?"selected":""}>Oui</option><option value="0" ${e.reserve===false?"selected":""}>Non</option></select></div></div>
     <div class="field"><label>Actions</label>${actRows}
-      <div class="actadd"><button onclick="addAction('lien')">🔗 Lien</button><button onclick="addAction('plan')">🧭 Plan</button><button onclick="addAction('fichier')">📄 Fichier</button><button onclick="addAction('photo')">🖼 Photo</button><button onclick="addAction('audio')">🔊 Audio</button></div></div>
+      <div class="actadd"><button onclick="addAction('lien')">🔗 Lien</button><button onclick="addAction('adresse')">📍 Plans</button><button onclick="addAction('itineraire')">🧭 Itinéraire</button><button onclick="addAction('fichier')">📄 Fichier</button><button onclick="addAction('photo')">🖼 Photo</button><button onclick="addAction('audio')">🔊 Audio</button></div></div>
     <div class="field"><label>Notes</label><textarea id="f_notes" style="min-height:80px">${esc(e.notes)}</textarea></div>
     <button class="btn primary" onclick="saveEvent()">Enregistrer</button>
     ${isNew?"":`<button class="btn del" onclick="delEvent('${EDIT_CTX.jid}','${EDIT_CTX.eid}')">Supprimer l'étape</button>`}`);
 }
 async function saveEvent(){captureEditor();if(!(EDIT.titre||"").trim()){alert("Donne un titre à l'étape.");return;}
-  EDIT.actions=(EDIT.actions||[]).filter(a=>a.type==="lien"?(a.label||a.url):a.type==="plan"?(a.depart||a.arrivee):a.type==="audio"?(a.label||a.texte):a.data);
+  EDIT.actions=(EDIT.actions||[]).filter(a=>a.type==="lien"?(a.label||a.url):a.type==="adresse"?a.adresse:a.type==="itineraire"?(a.depart||a.arrivee):a.type==="audio"?(a.label||a.texte):a.data);
   EDIT.champs=(EDIT.champs||[]).filter(c=>c.label||c.value);
   const target=trip().jours.find(x=>x.id===EDIT_CTX.jid);if(!target)return;
   if(EDIT_CTX.eid===null){target.etapes.push(EDIT);}
