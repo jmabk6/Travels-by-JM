@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Voyages">
+<meta name="theme-color" content="#1B2A41">
+<title>Mes Voyages</title>
+<style>
+:root{
+  --paper:#F5F2EA; --card:#FBFAF6; --ink:#1B2A41; --ink-2:#6B7689;
+  --sea:#0E7C86; --sea-deep:#0B5F67; --sun:#C98A2B; --good:#4F8A5B; --coral:#C75D4F;
+  --line:#E4DECF; --line-2:#EEE9DC;
+  --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:16px;overscroll-behavior-y:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:16px}
+a{color:inherit;text-decoration:none}
+.app{max-width:430px;margin:0 auto;min-height:100vh}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;
+  padding:calc(var(--safe-t) + 14px) 16px 12px;background:rgba(245,242,234,.95);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .back{color:var(--sea);font-weight:600;font-size:15px;white-space:nowrap}
+.top h1{flex:1;font-family:var(--serif);font-size:19px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .add{width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:var(--sea);color:#fff;font-size:22px;line-height:34px;text-align:center}
+.top .sp{width:34px;flex:0 0 auto}
+
+.wrap{padding:6px 16px calc(var(--safe-b) + 40px)}
+
+/* day */
+.day-h{display:flex;align-items:baseline;gap:10px;margin:18px 0 4px}
+.day-h .d{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--sea-deep);text-transform:uppercase}
+.day-h .t{font-family:var(--serif);font-size:19px;font-weight:600;flex:1}
+.day-h .edit{font-size:13px;color:var(--sea);font-weight:600}
+
+/* event row */
+.ev{display:flex;align-items:stretch}
+.ev .time{flex:0 0 64px;text-align:right;padding:12px 12px 0 0;color:var(--sea-deep);font-weight:600;font-size:12.5px;line-height:1.4;white-space:nowrap}
+.ev .rail{flex:0 0 18px;position:relative}
+.ev .rail::before{content:"";position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--line)}
+.ev .rail .dot{position:absolute;left:3px;top:15px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--sea)}
+.ev.done .rail .dot{background:var(--sea)}
+.ev:first-of-type .rail::before{top:15px}
+.ev:last-of-type .rail::before{height:15px}
+.ev .c{flex:1;padding:11px 0 14px 8px;border-bottom:1px solid var(--line-2);display:flex;align-items:flex-start;gap:8px}
+.ev:last-of-type .c{border-bottom:none}
+.ev .c .txt{flex:1}
+.ev .ttl{font-size:15.5px;font-weight:600;line-height:1.3}
+.ev.done .ttl{color:var(--ink-2);text-decoration:line-through}
+.ev .sub{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin-top:3px}
+.ev .chev{color:var(--sea);font-size:20px;align-self:center}
+
+.addday{display:block;width:100%;text-align:center;margin-top:22px;color:var(--sea);font-weight:600;font-size:14px;padding:10px;border:1.5px dashed var(--line);border-radius:12px}
+.ver{text-align:center;color:var(--ink-2);font-size:11px;opacity:.5;margin-top:26px}
+.empty{text-align:center;color:var(--ink-2);padding:24px}
+
+/* detail */
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--sea-deep)}
+.d-title{font-family:var(--serif);font-size:25px;font-weight:600;line-height:1.18;margin:6px 0 10px}
+.pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 11px;border-radius:999px}
+.pill.ok{background:#dfeee2;color:#34663f;border:1px solid #cae0cf}
+.pill.no{background:#fbe7e3;color:#a23c2e;border:1px solid #f0cabf}
+.sec-lbl{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin:20px 0 9px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:flex;gap:12px;padding:12px 15px;border-bottom:1px solid var(--line-2);font-size:14.5px}
+.row:last-child{border-bottom:none}
+.row .k{flex:0 0 116px;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);padding-top:2px}
+.row .v{flex:1;font-weight:500}
+.row .v a{color:var(--sea);font-weight:600;text-decoration:none}
+.row.cost .v{font-weight:700;color:var(--sea-deep);font-size:16px}
+.act{display:flex;align-items:center;gap:11px;width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:15px;font-weight:600;margin-bottom:9px}
+.act>span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.actrow{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:#fff}
+.actrow input{margin-bottom:6px}
+.actrow .ah{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);margin-bottom:7px}
+.actadd{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.actadd button{flex:1;min-width:46%;border:1.5px dashed var(--line);border-radius:10px;padding:10px;font-size:13px;font-weight:600;color:var(--sea)}
+.filebtn{display:inline-block;border:1px solid var(--line);border-radius:8px;padding:9px 12px;background:#fff;font-size:14px;font-weight:600;color:var(--sea)}
+.filebtn input{display:none}
+.speedrow{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2);margin:2px 0 10px;flex-wrap:wrap}
+.spd{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:var(--ink)}
+.spd.on{background:var(--sea);border-color:var(--sea);color:#fff}
+.imgview{display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.92);align-items:center;justify-content:center;padding:20px}
+.imgview.on{display:flex}.imgview img{max-width:100%;max-height:100%;border-radius:8px}
+.act .ic{font-size:18px;width:22px;text-align:center}
+.act .go{margin-left:auto;color:var(--sea);font-size:18px}
+.notes-box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:14px;line-height:1.5;color:#3c4658;white-space:pre-wrap}
+.statusbar{display:flex;align-items:center;gap:12px;margin:8px 0 4px}
+.chk{width:24px;height:24px;border-radius:50%;border:2px solid var(--sea);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.chk.on{background:var(--sea)}
+
+/* buttons */
+.btn{display:block;width:100%;text-align:center;border-radius:12px;padding:13px;font-weight:650;font-size:15.5px;margin-top:10px;border:1.5px solid transparent}
+.btn.primary{background:var(--sea);color:#fff}
+.btn.ghost{background:transparent;border-color:var(--line)}
+.btn.del{background:transparent;border-color:var(--line);color:var(--coral)}
+.btn.sm{padding:9px;font-size:14px;margin-top:0}
+
+/* sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(27,42,65,.42);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.sheet-bg.on{display:flex}
+.sheet{background:var(--paper);width:100%;max-width:430px;border-radius:20px 20px 0 0;padding:18px 18px calc(var(--safe-b) + 22px);max-height:92vh;overflow:auto}
+.sheet h2{font-family:var(--serif);font-size:20px;margin-bottom:14px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;min-width:0;max-width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff;color:var(--ink)}
+.field input[type=time]{text-align:left}
+.field input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0}
+.field.r2{display:flex;gap:10px}.field.r2>div{flex:1;min-width:0}
+.timerow{display:flex;justify-content:space-between;gap:12px}
+.timerow input[type=time]{width:118px;text-align:center}
+.timerow>div:last-child{text-align:right}
+.lienrow{border:1px solid var(--line);border-radius:10px;padding:9px;margin-bottom:8px;background:#fff}
+.lienrow input{margin-bottom:6px}
+.lienrow input:last-of-type{margin-bottom:0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div class="sheet-bg" id="sheetBg"><div class="sheet" id="sheet"></div></div>
+<div class="imgview" id="imgView" onclick="closeImg()"></div>
+
+<script>
+"use strict";
+const VERSION="v21";
+const $=id=>document.getElementById(id);
+const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function readFile(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
+function readImage(file,max=1600,q=0.82){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>max||h>max){const s=Math.min(max/w,max/h);w=Math.round(w*s);h=Math.round(h*s);}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);res(c.toDataURL("image/jpeg",q));};img.onerror=rej;img.src=r.result;};r.onerror=rej;r.readAsDataURL(file);});}
+function dataUrlToBlob(d){const p=d.split(",");const mime=(p[0].match(/:(.*?);/)||[])[1]||"application/octet-stream";const bin=atob(p[1]);const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);return new Blob([u],{type:mime});}
+function dirUrl(dep,arr){return "https://maps.apple.com/?"+(dep?("saddr="+encodeURIComponent(dep)+"&"):"")+"daddr="+encodeURIComponent(arr||"");}
+const FR_D=["dim","lun","mar","mer","jeu","ven","sam"],FR_M=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+function dShort(iso){if(!iso)return"";const d=new Date(iso+"T12:00");return FR_D[d.getDay()]+" "+d.getDate()+" "+FR_M[d.getMonth()];}
+function fmtTime(s){return s?String(s).replace(":","h"):"";}
+function timeStack(e){const a=fmtTime(e.debut),b=fmtTime(e.fin);return a?(b?a+"<br>"+b:a):"";}
+
+/* ---- groupes : champs spécifiques [clé,libellé] (en plus du tronc commun) ---- */
+const GROUPS={
+ "Vol":[["compagnie","Compagnie"],["num","N° de vol"],["ref","Dossier / réf."],["sieges","Sièges"],["terminal","Terminal / porte"],["bagages","Bagages"]],
+ "Transport":[["compagnie","Compagnie"],["ref","N° de réservation"],["depart","Lieu de départ"],["arrivee","Lieu d'arrivée"],["place","Place / siège"]],
+ "Voiture":[["loueur","Loueur"],["ref","N° de réservation"],["prise","Lieu de prise"],["restitution","Lieu de restitution"],["modele","Modèle"],["assurance","Assurance"]],
+ "Trajet":[["depart","Départ"],["arrivee","Arrivée"],["duree","Durée estimée"],["distance","Distance"]],
+ "Hôtel":[["ref","N° de réservation"],["checkin","Check-in"],["checkout","Check-out"],["chambre","N° de chambre"],["formule","Formule"]],
+ "Restaurant":[["cuisine","Cuisine"],["heure","Heure de réservation"]],
+ "Visite":[["horaires","Horaires d'ouverture"],["billet","N° de billet"],["dureec","Durée conseillée"]],
+ "Activité":[["prestataire","Prestataire"],["ref","N° de réservation"],["duree","Durée"]],
+ "Nature":[["depart","Départ"],["distance","Distance"],["duree","Durée"],["denivele","Dénivelé / difficulté"],["acces","Accès / parking"]],
+ "Bien-être":[["prestataire","Institut / prestataire"],["heure","Heure de réservation"],["duree","Durée"]],
+ "Autre":[]
+};
+const GROUP_NAMES=Object.keys(GROUPS);
+function fToChamps(groupe,f){f=f||{};const defs=GROUPS[groupe]||[];const out=defs.map(([k,l])=>({label:l,value:f[k]||""}));
+  Object.keys(f).forEach(k=>{if(!defs.some(d=>d[0]===k)&&f[k])out.push({label:k,value:f[k]});});return out;}
+const NAME_L=["nom"],ADDR_L=["adresse","adresse / lieu","lieu"],TEL_L=["téléphone","telephone","tél","tel"];
+function chFind(e,set){return (e.champs||[]).find(c=>set.includes((c.label||"").trim().toLowerCase()));}
+function etName(e){if(e.titre&&e.titre.trim())return e.titre;const f=(e.champs||[]).find(c=>c.value);return f?f.value:"(sans nom)";}
+function etAddr(e){const c=chFind(e,ADDR_L);return c?c.value:"";}
+function etTel(e){const c=chFind(e,TEL_L);return c?c.value:"";}
+function defChamps(groupe){const base=["Adresse","Téléphone"];const grp=(GROUPS[groupe]||[]).map(([k,l])=>l);return base.concat(grp).map(l=>({label:l,value:""}));}
+
+/* ---- storage ---- */
+let DB=null,MEM={},useMem=false;
+function openDB(){return new Promise(res=>{try{const r=indexedDB.open("voyages2",1);
+  r.onupgradeneeded=e=>{e.target.result.createObjectStore("kv");};
+  r.onsuccess=e=>{DB=e.target.result;res();}; r.onerror=()=>{useMem=true;res();};}catch(e){useMem=true;res();}});}
+function getKV(k){return new Promise(r=>{if(useMem)return r(MEM[k]);const t=DB.transaction("kv","readonly").objectStore("kv").get(k);t.onsuccess=()=>r(t.result);t.onerror=()=>r(undefined);});}
+function putKV(k,v){return new Promise(r=>{if(useMem){MEM[k]=v;return r();}const t=DB.transaction("kv","readwrite").objectStore("kv").put(v,k);t.onsuccess=()=>r();t.onerror=()=>r();});}
+
+let DATA=null,view="itin",cur=null,SPK=null;
+async function save(){await putKV("data",DATA);}
+async function load(){const s=await getKV("data");if(s){DATA=s;migrate();}else{DATA=seed();}await save();}
+function migrate(){const t=DATA.trip;if(!t)return;(t.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>{
+  if(e.champs===undefined){e.champs=fToChamps(e.groupe,e.f||{});delete e.f;}
+  if("nom"in e||"lieu"in e||"tel"in e){
+    const has=l=>e.champs.some(c=>(c.label||"").trim().toLowerCase()===l.toLowerCase());
+    const head=[];
+    if(!has("Nom"))head.push({label:"Nom",value:e.nom||""});
+    if(!has("Adresse"))head.push({label:"Adresse",value:e.lieu||""});
+    if(!has("Téléphone"))head.push({label:"Téléphone",value:e.tel||""});
+    e.champs=head.concat(e.champs);delete e.nom;delete e.lieu;delete e.tel;
+  }
+  if(e.actions===undefined){e.actions=(e.liens||[]).filter(l=>l&&(l.label||l.url)).map(l=>({type:"lien",label:l.label||"",url:l.url||""}));delete e.liens;}
+  if(e.titre===undefined){const ni=(e.champs||[]).findIndex(c=>(c.label||"").trim().toLowerCase()==="nom");if(ni>=0){e.titre=e.champs[ni].value||"";e.champs.splice(ni,1);}else e.titre="";}
+}));}
+const trip=()=>DATA.trip;
+function sortDay(j){if(j&&j.etapes)j.etapes.sort((a,b)=>(a.debut||"99:99").localeCompare(b.debut||"99:99"));}
+
+/* ---- render ---- */
+function render(){view==="detail"?renderDetail():renderItin();}
+
+function renderItin(){
+  const t=trip();
+  const days=[...t.jours].sort((a,b)=>(a.date||"")<(b.date||"")?-1:1).map(j=>{sortDay(j);
+    const evs=(j.etapes||[]).map(e=>`
+      <div class="ev ${e.statut==='fait'?'done':''}">
+        <div class="time">${timeStack(e)}</div>
+        <div class="rail"><span class="dot"></span></div>
+        <div class="c" onclick="openDetail('${j.id}','${e.id}')">
+          <div class="txt"><div class="ttl">${esc(etName(e))}</div><div class="sub">${esc(e.groupe||"")}</div></div>
+          <span class="chev">›</span></div>
+      </div>`).join("")||'<div class="ev"><div class="time"></div><div class="rail"><span class="dot"></span></div><div class="c"><div class="txt"><div class="sub">Aucune étape</div></div></div></div>';
+    return `<div class="day-h"><span class="d">${dShort(j.date)}</span><span class="t">${esc(j.titre)}</span><span class="edit" onclick="editDay('${j.id}')">Modifier</span></div>${evs}`;
+  }).join("");
+  $("app").innerHTML=`
+    <div class="top"><span class="sp"></span><h1>${esc(t.titre)} (${VERSION})</h1><button class="add" onclick="editDay()">+</button></div>
+    <div class="wrap">${t.jours.length?days:'<div class="empty">Aucune journée.</div>'}
+      <button class="addday" onclick="editDay()">+ Ajouter une journée</button>
+      <div class="ver">Mes Voyages · ${VERSION}</div>
+    </div>`;
+}
+
+function renderDetail(){
+  const j=trip().jours.find(x=>x.id===cur.jid);const e=j&&j.etapes.find(x=>x.id===cur.eid);
+  if(!e){view="itin";return render();}
+  const nm=etName(e),addr=etAddr(e),tel=etTel(e);
+  const q=encodeURIComponent(addr||(nm!=="(sans nom)"?nm:""));
+  const rows=[];
+  (e.champs||[]).forEach(c=>{const lc=(c.label||"").trim().toLowerCase();if(c.value&&lc!=="nom"){const v=TEL_L.includes(lc)?`<a href="tel:${esc(c.value).replace(/\s/g,'')}">${esc(c.value)}</a>`:esc(c.value);rows.push(`<div class="row"><span class="k">${esc(c.label||"—")}</span><span class="v">${v}</span></div>`);}});
+  if(e.cout)rows.push(`<div class="row cost"><span class="k">Coût</span><span class="v">${esc(e.cout)}</span></div>`);
+  const reservePill=e.reserve===true?'<span class="pill ok">Réservé</span>':e.reserve===false?'<span class="pill no">À réserver</span>':"";
+  const acts=[];
+  (e.actions||[]).forEach((a,ai)=>{
+    if(a.type==="lien"&&(a.label||a.url))acts.push(`<a class="act" ${a.url?`href="${esc(a.url)}" target="_blank" rel="noopener"`:""}><span class="ic">🔗</span><span>${esc(a.label||a.url||"Lien")}</span><span class="go">›</span></a>`);
+    else if(a.type==="plan"&&(a.depart||a.arrivee))acts.push(`<a class="act" href="${dirUrl(a.depart,a.arrivee)}" target="_blank" rel="noopener"><span class="ic">🧭</span><span>${esc(a.label||((a.depart||"?")+" → "+(a.arrivee||"?")))}</span><span class="go">›</span></a>`);
+    else if(a.type==="fichier"&&a.data)acts.push(`<a class="act" onclick="openAtt('${j.id}','${e.id}',${ai})"><span class="ic">📄</span><span>${esc(a.label||a.name||"Fichier")}</span><span class="go">›</span></a>`);
+    else if(a.type==="photo"&&a.data)acts.push(`<a class="act" onclick="openImg('${j.id}','${e.id}',${ai})"><span class="ic">🖼</span><span>${esc(a.label||a.name||"Photo")}</span><span class="go">›</span></a>`);
+    else if(a.type==="audio"&&a.texte){const pl=SPK&&SPK.jid===j.id&&SPK.eid===e.id&&SPK.ai===ai;acts.push(`<a class="act" onclick="speakAction('${j.id}','${e.id}',${ai})"><span class="ic">${pl?"⏸":"🔊"}</span><span>${pl?"Lecture en cours… (toucher pour arrêter)":esc(a.label||"Audio")}</span><span class="go">›</span></a>`);}
+  });
+  $("app").innerHTML=`
+    <div class="top"><button class="back" onclick="back()">‹ Itinéraire</button><h1>${esc(j.titre)}</h1><span class="sp"></span></div>
+    <div class="wrap">
+      <div class="eyebrow">${[timeStack(e).replace("<br>"," – "),e.groupe].filter(Boolean).join(" · ")}</div>
+      <div class="d-title">${esc(nm)}</div>
+      ${reservePill}
+      <div class="statusbar"><div class="chk ${e.statut==='fait'?'on':''}" onclick="toggleDone('${j.id}','${e.id}')">${e.statut==='fait'?'✓':''}</div>
+        <span style="font-size:13px;color:var(--ink-2)">${e.statut==='fait'?'Fait':'À faire'}</span></div>
+      ${rows.length?`<div class="sec-lbl">Infos</div><div class="card">${rows.join("")}</div>`:""}
+      ${acts.length?`<div class="sec-lbl">Actions</div>${(e.actions||[]).some(a=>a.type==="audio"&&a.texte)?(()=>{const rate=DATA.audioRate||0.85;const mk=(r,l)=>`<button class="spd${Math.abs(rate-r)<0.01?' on':''}" onclick="setRate(${r})">${l}</button>`;return `<div class="speedrow">🔊 Vitesse&nbsp;: ${mk(0.7,'Lent')}${mk(0.85,'Moyen')}${mk(1,'Normal')}</div>`;})():""}${acts.join("")}`:""}
+      ${e.notes?`<div class="sec-lbl">Notes</div><div class="notes-box">${esc(e.notes)}</div>`:""}
+      <button class="btn primary" onclick="editEvent('${j.id}','${e.id}')">Modifier l'étape</button>
+      <button class="btn del" onclick="delEvent('${j.id}','${e.id}')">Supprimer l'étape</button>
+    </div>`;
+}
+
+/* ---- nav ---- */
+function openDetail(jid,eid){cur={jid:jid,eid:eid};view="detail";render();}
+function openImg(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.data)return;$("imgView").innerHTML=`<img src="${a.data}" alt="">`;$("imgView").classList.add("on");}
+function closeImg(){$("imgView").classList.remove("on");$("imgView").innerHTML="";}
+function openAtt(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.data)return;try{const url=URL.createObjectURL(dataUrlToBlob(a.data));window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(err){const w=window.open();if(w)w.location=a.data;}}
+function back(){stopSpeak();view="itin";cur=null;render();}
+function stopSpeak(){try{if('speechSynthesis' in window)speechSynthesis.cancel();}catch(e){}SPK=null;}
+function speakAction(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.texte)return;
+  if(!('speechSynthesis' in window)){alert("La lecture audio n'est pas disponible sur cet appareil.");return;}
+  if(SPK&&SPK.jid===jid&&SPK.eid===eid&&SPK.ai===ai){stopSpeak();render();return;}
+  stopSpeak();SPK={jid:jid,eid:eid,ai:ai};
+  const chunks=a.texte.replace(/\s+/g,' ').trim().match(/[^.!?…]+[.!?…]*/g)||[a.texte];
+  const voices=speechSynthesis.getVoices();const fr=voices.find(v=>/fr[-_]?FR/i.test(v.lang))||voices.find(v=>/^fr/i.test(v.lang));
+  chunks.forEach((c,idx)=>{const u=new SpeechSynthesisUtterance(c.trim());u.lang="fr-FR";u.rate=DATA.audioRate||0.85;if(fr)u.voice=fr;if(idx===chunks.length-1)u.onend=()=>{if(SPK&&SPK.jid===jid&&SPK.eid===eid&&SPK.ai===ai){SPK=null;render();}};speechSynthesis.speak(u);});
+  render();}
+function setRate(r){DATA.audioRate=r;stopSpeak();save();render();}
+async function toggleDone(jid,eid){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);e.statut=e.statut==="fait"?"prevu":"fait";await save();render();}
+
+/* ---- sheet ---- */
+function openSheet(html){$("sheet").innerHTML=html;$("sheetBg").classList.add("on");}
+function closeSheet(){$("sheetBg").classList.remove("on");}
+$("sheetBg").addEventListener("click",e=>{if(e.target===$("sheetBg"))closeSheet();});
+const val=id=>{const el=$(id);return el?el.value.trim():"";};
+
+/* ---- editor (groupe-aware) ---- */
+let EDIT=null,EDIT_CTX=null;
+function editEvent(jid,eid){const j=trip().jours.find(x=>x.id===jid);const e=j.etapes.find(x=>x.id===eid);
+  EDIT=JSON.parse(JSON.stringify(e));EDIT_CTX={jid:jid,eid:eid,origJid:jid};renderEditor();}
+function addEvent(jid){const first=trip().jours[0];
+  EDIT={id:uid(),debut:"",fin:"",groupe:"Visite",titre:"",cout:"",reserve:null,champs:defChamps("Visite"),actions:[],notes:"",statut:"prevu"};
+  EDIT_CTX={jid:jid||(first?first.id:null),eid:null,origJid:null};renderEditor();}
+function captureEditor(){
+  EDIT.debut=val("f_debut");EDIT.fin=val("f_fin");EDIT.groupe=$("f_groupe").value;EDIT.cout=val("f_cout");EDIT.titre=val("f_titre");
+  const rs=$("f_reserve").value;EDIT.reserve=rs===""?null:rs==="1";
+  EDIT.champs=(EDIT.champs||[]).map((c,i)=>({label:$("cl_"+i)?$("cl_"+i).value.trim():c.label,value:$("cv_"+i)?$("cv_"+i).value.trim():c.value}));
+  EDIT.actions=(EDIT.actions||[]).map((a,i)=>{
+    const label=$("al_"+i)?$("al_"+i).value.trim():(a.label||"");
+    if(a.type==="lien")return{type:"lien",label:label,url:$("au_"+i)?$("au_"+i).value.trim():a.url};
+    if(a.type==="plan")return{type:"plan",label:label,depart:$("ad_"+i)?$("ad_"+i).value.trim():a.depart,arrivee:$("aa_"+i)?$("aa_"+i).value.trim():a.arrivee};
+    if(a.type==="audio")return{type:"audio",label:label,texte:$("at_"+i)?$("at_"+i).value:(a.texte||"")};
+    return Object.assign({},a,{label:label});
+  });
+  EDIT.notes=$("f_notes")?$("f_notes").value:EDIT.notes;
+  if($("f_jour"))EDIT_CTX.jid=$("f_jour").value;
+}
+function onGroupChange(){captureEditor();if((EDIT.champs||[]).every(c=>!c.value))EDIT.champs=defChamps(EDIT.groupe);renderEditor();}
+function addChamp(){captureEditor();EDIT.champs=EDIT.champs||[];EDIT.champs.push({label:"",value:""});renderEditor();}
+function rmChamp(i){captureEditor();EDIT.champs.splice(i,1);renderEditor();}
+function addAction(type){captureEditor();EDIT.actions=EDIT.actions||[];const a=type==="lien"?{type:"lien",label:"",url:""}:type==="plan"?{type:"plan",label:"",depart:"",arrivee:""}:type==="audio"?{type:"audio",label:"",texte:""}:{type:type,label:""};EDIT.actions.push(a);renderEditor();}
+function rmAction(i){captureEditor();EDIT.actions.splice(i,1);renderEditor();}
+async function pickFile(i){captureEditor();const inp=$("af_"+i),f=inp&&inp.files&&inp.files[0];if(!f)return;try{const data=await readFile(f);const lbl=((EDIT.actions[i]&&EDIT.actions[i].label)||"").trim()||f.name;EDIT.actions[i]={type:"fichier",label:lbl,name:f.name,mime:f.type,data:data};renderEditor();}catch(e){alert("Impossible de lire le fichier.");}}
+async function pickPhoto(i){captureEditor();const inp=$("ap_"+i),f=inp&&inp.files&&inp.files[0];if(!f)return;try{const data=await readImage(f);const lbl=((EDIT.actions[i]&&EDIT.actions[i].label)||"").trim()||(f.name||"Photo");EDIT.actions[i]={type:"photo",label:lbl,name:f.name||"photo.jpg",data:data};renderEditor();}catch(e){alert("Impossible de lire la photo.");}}
+function renderEditor(){
+  const e=EDIT,isNew=EDIT_CTX.eid===null;
+  const jourSel=`<div class="field"><label>Journée</label><select id="f_jour">${trip().jours.map(j=>`<option value="${j.id}" ${j.id===EDIT_CTX.jid?"selected":""}>${esc(dShort(j.date))} — ${esc(j.titre)}</option>`).join("")}</select></div>`;
+  const champsRows=(e.champs||[]).map((c,i)=>`<div class="lienrow"><input id="cl_${i}" value="${esc(c.label)}" placeholder="Nom du champ (ex. Compagnie)"><input id="cv_${i}" value="${esc(c.value)}" placeholder="Valeur"><button class="btn ghost sm" style="margin-top:6px;color:var(--coral)" onclick="rmChamp(${i})">Supprimer ce champ</button></div>`).join("");
+  const actRows=(e.actions||[]).map((a,i)=>{
+    const rm=`<button class="btn ghost sm" style="margin-top:6px;color:var(--coral)" onclick="rmAction(${i})">Retirer</button>`;
+    const lab=`<input id="al_${i}" value="${esc(a.label||"")}" placeholder="Intitulé (ce qui s'affiche dans la fiche)">`;
+    if(a.type==="lien")return `<div class="actrow"><div class="ah">🔗 Lien</div>${lab}<input id="au_${i}" value="${esc(a.url)}" inputmode="url" placeholder="https://…">${rm}</div>`;
+    if(a.type==="plan")return `<div class="actrow"><div class="ah">🧭 Plan (itinéraire)</div>${lab}<input id="ad_${i}" value="${esc(a.depart)}" placeholder="Départ (ex. Elounda)"><input id="aa_${i}" value="${esc(a.arrivee)}" placeholder="Arrivée (ex. Plaka)">${rm}</div>`;
+    if(a.type==="fichier")return `<div class="actrow"><div class="ah">📄 Fichier</div>${lab}<label class="filebtn">${a.data?"Remplacer le fichier":"Choisir un fichier"}<input type="file" id="af_${i}" onchange="pickFile(${i})"></label>${a.name?`<div style="margin-top:6px;font-size:13px;color:var(--ink-2)">${esc(a.name)}</div>`:""}${rm}</div>`;
+    if(a.type==="photo")return `<div class="actrow"><div class="ah">🖼 Photo</div>${lab}<label class="filebtn">${a.data?"Remplacer la photo":"Choisir une photo"}<input type="file" accept="image/*" id="ap_${i}" onchange="pickPhoto(${i})"></label>${a.data?`<div style="margin-top:8px"><img src="${a.data}" style="max-width:100%;max-height:140px;border-radius:8px"></div>`:""}${rm}</div>`;
+    if(a.type==="audio")return `<div class="actrow"><div class="ah">🔊 Audio — texte lu à voix haute</div>${lab}<textarea id="at_${i}" style="min-height:96px" placeholder="Texte du chapitre à écouter…">${esc(a.texte||"")}</textarea>${rm}</div>`;
+    return "";
+  }).join("");
+  openSheet(`<h2>${isNew?"Nouvelle étape":"Modifier l'étape"}</h2>
+    ${jourSel}
+    <div class="field timerow"><div><label>Début</label><input id="f_debut" type="time" value="${e.debut||""}"></div>
+      <div><label>Fin</label><input id="f_fin" type="time" value="${e.fin||""}"></div></div>
+    <div class="field"><label>Titre de l'étape</label><input id="f_titre" value="${esc(e.titre||"")}" placeholder="ex. Vol Paris → Héraklion"></div>
+    <div class="field"><label>Groupe</label><select id="f_groupe" onchange="onGroupChange()">${GROUP_NAMES.map(g=>`<option ${g===e.groupe?"selected":""}>${g}</option>`).join("")}</select></div>
+    <div class="field"><label>Infos (champs libres — adresse, téléphone…)</label>${champsRows}<button class="btn ghost sm" onclick="addChamp()">+ Ajouter un champ</button></div>
+    <div class="field r2"><div><label>Coût</label><input id="f_cout" value="${esc(e.cout)}" placeholder="ex. 320 €"></div>
+      <div><label>Réservé</label><select id="f_reserve"><option value="">—</option><option value="1" ${e.reserve===true?"selected":""}>Oui</option><option value="0" ${e.reserve===false?"selected":""}>Non</option></select></div></div>
+    <div class="field"><label>Actions</label>${actRows}
+      <div class="actadd"><button onclick="addAction('lien')">🔗 Lien</button><button onclick="addAction('plan')">🧭 Plan</button><button onclick="addAction('fichier')">📄 Fichier</button><button onclick="addAction('photo')">🖼 Photo</button><button onclick="addAction('audio')">🔊 Audio</button></div></div>
+    <div class="field"><label>Notes</label><textarea id="f_notes" style="min-height:80px">${esc(e.notes)}</textarea></div>
+    <button class="btn primary" onclick="saveEvent()">Enregistrer</button>
+    ${isNew?"":`<button class="btn del" onclick="delEvent('${EDIT_CTX.jid}','${EDIT_CTX.eid}')">Supprimer l'étape</button>`}`);
+}
+async function saveEvent(){captureEditor();if(!(EDIT.titre||"").trim()){alert("Donne un titre à l'étape.");return;}
+  EDIT.actions=(EDIT.actions||[]).filter(a=>a.type==="lien"?(a.label||a.url):a.type==="plan"?(a.depart||a.arrivee):a.type==="audio"?(a.label||a.texte):a.data);
+  EDIT.champs=(EDIT.champs||[]).filter(c=>c.label||c.value);
+  const target=trip().jours.find(x=>x.id===EDIT_CTX.jid);if(!target)return;
+  if(EDIT_CTX.eid===null){target.etapes.push(EDIT);}
+  else{const orig=trip().jours.find(x=>x.id===EDIT_CTX.origJid);
+    if(orig)orig.etapes=orig.etapes.filter(x=>x.id!==EDIT_CTX.eid);
+    target.etapes.push(EDIT);
+    if(orig&&orig!==target)sortDay(orig);}
+  cur={jid:target.id,eid:EDIT.id};sortDay(target);
+  await save();closeSheet();view="detail";render();}
+async function delEvent(jid,eid){if(!confirm("Supprimer cette étape ?"))return;
+  const j=trip().jours.find(x=>x.id===jid);j.etapes=j.etapes.filter(x=>x.id!==eid);
+  await save();closeSheet();view="itin";cur=null;render();}
+
+/* ---- day editor ---- */
+function editDay(jid){const j=jid?trip().jours.find(x=>x.id===jid):null;
+  let steps="";
+  if(j){sortDay(j);steps=(j.etapes||[]).map(e=>`<div class="actrow" style="display:flex;align-items:center;gap:10px;padding:9px 11px"><div style="flex:1;min-width:0" onclick="dayEditStep('${jid}','${e.id}')"><div style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(etName(e))}</div><div style="font-size:12px;color:var(--ink-2)">${esc((e.debut||"")+(e.fin?" – "+e.fin:"")||"—")} · ${esc(e.groupe||"")}</div></div><button class="btn ghost sm" style="color:var(--coral);width:auto;margin:0;padding:6px 11px" onclick="dayRmStep('${jid}','${e.id}')">✕</button></div>`).join("");}
+  openSheet(`<h2>${j?"Modifier la journée":"Nouvelle journée"}</h2>
+    <div class="field"><label>Date</label><input id="d_date" type="date" value="${j?j.date||"":""}"></div>
+    <div class="field"><label>Titre</label><input id="d_titre" value="${esc(j?j.titre:"")}" placeholder="ex. Spinalonga & Agios Nikolaos"></div>
+    ${j?`<div class="field"><label>Étapes</label>${steps||'<div style="font-size:13px;color:var(--ink-2);margin-bottom:8px">Aucune étape pour le moment.</div>'}<button class="btn ghost sm" onclick="dayAddStep('${jid}')">+ Ajouter une étape</button></div>`:`<div style="font-size:13px;color:var(--ink-2);margin:2px 0 14px">Enregistre d'abord la journée, tu pourras ensuite y ajouter des étapes.</div>`}
+    <button class="btn primary" onclick="saveDay('${jid||""}')">Enregistrer</button>
+    ${j?`<button class="btn del" onclick="delDay('${jid}')">Supprimer la journée</button>`:""}`);}
+function dayAddStep(jid){const j=trip().jours.find(x=>x.id===jid);if(j){j.date=val("d_date")||j.date;j.titre=val("d_titre")||j.titre;}addEvent(jid);}
+function dayEditStep(jid,eid){const j=trip().jours.find(x=>x.id===jid);if(j){j.date=val("d_date")||j.date;j.titre=val("d_titre")||j.titre;}editEvent(jid,eid);}
+async function dayRmStep(jid,eid){if(!confirm("Supprimer cette étape ?"))return;const j=trip().jours.find(x=>x.id===jid);j.etapes=j.etapes.filter(x=>x.id!==eid);await save();editDay(jid);}
+async function saveDay(jid){const t=trip();
+  if(jid){const j=t.jours.find(x=>x.id===jid);j.date=val("d_date");j.titre=val("d_titre");}
+  else t.jours.push({id:uid(),date:val("d_date"),titre:val("d_titre")||"Journée",etapes:[]});
+  await save();closeSheet();render();}
+async function delDay(jid){if(!confirm("Supprimer cette journée et ses étapes ?"))return;
+  trip().jours=trip().jours.filter(x=>x.id!==jid);await save();closeSheet();render();}
+
+/* ---- seed : la Crète ---- */
+function ev(debut,fin,groupe,nom,o){o=o||{};
+  const champs=[{label:"Adresse",value:o.lieu||""},{label:"Téléphone",value:o.tel||""}];
+  const f=o.f||{},defs=GROUPS[groupe]||[];
+  defs.forEach(([k,l])=>champs.push({label:l,value:f[k]||""}));
+  Object.keys(f).forEach(k=>{if(!defs.some(d=>d[0]===k)&&f[k])champs.push({label:k,value:f[k]});});
+  const e={id:uid(),debut:debut||"",fin:fin||"",groupe:groupe,titre:nom||"",cout:o.cout||"",champs:champs,actions:(o.liens||[]).filter(l=>l&&(l.label||l.url)).map(l=>({type:"lien",label:l.label||"",url:l.url||""})),notes:o.notes||"",statut:"prevu"};
+  e.reserve=("reserve"in o)?o.reserve:null;return e;}
+function day(date,titre,etapes){return{id:uid(),date:date,titre:titre,etapes:etapes};}
+function seed(){
+  return {version:VERSION,trip:{titre:"Crète — Anniversaire",jours:[
+    day("2026-06-16","Arrivée",[
+      ev("13:00","18:00","Vol","Vol Paris → Héraklion",{lieu:"Aéroport d'Héraklion (HER)",cout:"320 €",reserve:true,
+        f:{compagnie:"Transavia",num:"TO 3456",ref:"XYZ123",sieges:"12A · 12B",terminal:"Orly 4",bagages:"1 soute + 1 cabine"},
+        liens:[{label:"Carte d'embarquement",url:""},{label:"Mail de réservation",url:""}],notes:"Arriver 2h avant."}),
+      ev("18:30","","Voiture","Prise de la voiture de location",{lieu:"Aéroport d'Héraklion",reserve:true,f:{loueur:"",ref:""}}),
+      ev("19:00","20:00","Trajet","Aéroport → Hôtel Enorme Infinity",{lieu:"Enorme Infinity, Elounda",f:{depart:"Aéroport d'Héraklion",arrivee:"Elounda",duree:"~1h"}}),
+      ev("21:00","","Restaurant","Dîner — Porto Rino",{lieu:"Porto Rino, Elounda",tel:"+30 2841 041518",reserve:false,f:{cuisine:"Italien / pizza"}})
+    ]),
+    day("2026-06-17","Spinalonga, Kritsa & Agios Nikolaos",[
+      ev("09:00","09:30","Autre","Petit-déjeuner",{lieu:"Enorme Infinity, Elounda"}),
+      ev("09:30","09:45","Trajet","Trajet hôtel → Plaka",{f:{depart:"Enorme Infinity, Elounda",arrivee:"Plaka",duree:"~15 min"}}),
+      ev("10:00","10:15","Transport","Bateau Plaka → Spinalonga",{f:{depart:"Plaka",arrivee:"Spinalonga"}}),
+      ev("10:15","11:55","Visite","Visite de Spinalonga",{lieu:"Spinalonga",notes:"Audioguide recommandé. Forteresse vénitienne + ancienne léproserie."}),
+      ev("12:00","12:15","Transport","Bateau Spinalonga → Plaka",{f:{depart:"Spinalonga",arrivee:"Plaka"}}),
+      ev("12:25","13:35","Restaurant","Déjeuner — PORTA Resto Bar",{lieu:"PORTA Resto Bar, Plaka",tel:"+30 2841 041110",reserve:false,f:{cuisine:"Crétoise, vue Spinalonga"}}),
+      ev("14:20","14:50","Visite","Panagia Kera — fresques byzantines",{lieu:"Panagia Kera, Kritsa",cout:"2 €",f:{horaires:"Ferme à 15h"}}),
+      ev("14:55","16:10","Visite","Village de Kritsa",{lieu:"Kritsa",notes:"Ruelles, artisanat, café grec / loukoumades."}),
+      ev("16:30","19:30","Visite","Agios Nikolaos — lac, port, marina, apéritif",{lieu:"Agios Nikolaos"}),
+      ev("20:00","","Restaurant","Dîner — Archontiko",{lieu:"Archontiko, Agios Nikolaos",tel:"+30 694 057 7606",reserve:true})
+    ]),
+    day("2026-06-18","Poterie & gorge de Richtis",[
+      ev("11:00","12:30","Activité","Atelier de poterie — Cretan Spiral",{lieu:"près d'Agios Nikolaos",tel:"+30 697 999 7617",reserve:true,f:{prestataire:"Cretan Spiral"}}),
+      ev("12:45","13:45","Restaurant","Déjeuner — Agios Nikolaos / Istron",{reserve:false,notes:"Sur la route vers Richtis."}),
+      ev("13:45","14:40","Trajet","Route vers la gorge de Richtis",{f:{depart:"Agios Nikolaos",arrivee:"Gorge de Richtis",duree:"~55 min"}}),
+      ev("14:40","17:10","Nature","Gorge de Richtis — cascade & plage",{lieu:"Gorge de Richtis (Exo Mouliana)",cout:"5 €",f:{duree:"~2h30",denivele:"Moyen, rochers parfois glissants",acces:"Parking en haut (pont) ou en bas (plage)"},notes:"Descente ombragée, cascade (baignade), plage au bout. Bonnes chaussures, eau, maillot."}),
+      ev("18:30","19:30","Bien-être","Massage de Madame",{lieu:"Spa Enorme Infinity",reserve:true,f:{duree:"1h"}}),
+      ev("20:30","","Restaurant","Dîner — Bluesea Sushi",{lieu:"Bluesea Seafood & Sushi, Elounda",tel:"+30 697 980 6313",reserve:true})
+    ]),
+    day("2026-06-19","Knossos → Chania",[
+      ev("08:00","","Trajet","Départ tôt vers Knossos",{f:{depart:"Elounda",arrivee:"Knossos"}}),
+      ev("09:30","11:15","Visite","Knossos — visite 3D tablette (FR)",{lieu:"Knossos",reserve:true}),
+      ev("12:50","14:00","Restaurant","Déjeuner — Georgioupoli (port)",{lieu:"Georgioupoli",reserve:false}),
+      ev("14:15","15:15","Nature","Lac de Kournas",{lieu:"Kournas"}),
+      ev("16:00","","Hôtel","Arrivée Samaria Hotel (Chania)",{lieu:"Samaria Hotel, Chania",f:{checkin:"16:00"}}),
+      ev("21:00","","Restaurant","Dîner — Palazzo al Mare",{lieu:"Port de Chania",tel:"+30 2821 008813",reserve:true})
+    ]),
+    day("2026-06-20","Anniversaire · Akrotiri",[
+      ev("10:00","12:30","Visite","Vieille ville de Chania",{lieu:"Chania"}),
+      ev("12:30","13:30","Restaurant","Déjeuner crêpes — Mix & Match",{lieu:"Chania",tel:"+30 2821 043649",reserve:false}),
+      ev("15:00","18:00","Nature","Akrotiri — Agia Triada + baignade",{lieu:"Akrotiri"}),
+      ev("18:30","19:30","Bien-être","Massage de Madame",{lieu:"Chania",reserve:true}),
+      ev("21:00","","Restaurant","Dîner anniversaire — Astrea Garden",{lieu:"Chania",tel:"+30 690 681 4988",reserve:true,notes:"Signaler l'anniversaire."})
+    ]),
+    day("2026-06-21","Elafonisi",[
+      ev("10:45","11:30","Visite","Gorge de Topolia + grotte d'Agia Sofia",{}),
+      ev("12:15","13:15","Restaurant","Déjeuner — secteur Elafonisi",{reserve:false}),
+      ev("13:30","15:30","Nature","Elafonisi — lagon turquoise",{lieu:"Elafonisi"}),
+      ev("16:00","","Trajet","Retour vers Chania",{f:{duree:"~1h30"}}),
+      ev("21:00","","Restaurant","Dîner — Tokyo Joe",{lieu:"Chania",tel:"+30 2821 600843",reserve:true})
+    ]),
+    day("2026-06-22","Theriso & Omalos",[
+      ev("10:00","11:30","Nature","Gorge + village de Theriso",{lieu:"Theriso"}),
+      ev("12:30","13:45","Restaurant","Déjeuner en montagne",{reserve:false,notes:"Option légumes/poisson pour Madame."}),
+      ev("14:30","16:30","Nature","Plateau d'Omalos + belvédère de Xyloskalo",{lieu:"Omalos"}),
+      ev("18:00","19:00","Bien-être","Massage de Madame",{lieu:"Chania",reserve:true}),
+      ev("21:00","","Restaurant","Dîner — Pasta Alla Mano",{lieu:"Chania",tel:"+30 2821 088887",reserve:true})
+    ]),
+    day("2026-06-23","Départ",[
+      ev("09:00","","Hôtel","Petit-déjeuner & check-out",{lieu:"Samaria Hotel, Chania"}),
+      ev("10:00","","Trajet","Route vers l'aéroport de Chania",{lieu:"Aéroport de Chania",f:{duree:"~20 min"}})
+    ])
+  ]}};
+}
+
+(async function(){await openDB();await load();render();})();
+</script>
+</body>
+</html>
