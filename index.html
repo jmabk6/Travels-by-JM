@@ -85,6 +85,9 @@ a{color:inherit;text-decoration:none}
 .actadd button{flex:1;min-width:46%;border:1.5px dashed var(--line);border-radius:10px;padding:10px;font-size:13px;font-weight:600;color:var(--sea)}
 .filebtn{display:inline-block;border:1px solid var(--line);border-radius:8px;padding:9px 12px;background:#fff;font-size:14px;font-weight:600;color:var(--sea)}
 .filebtn input{display:none}
+.speedrow{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2);margin:2px 0 10px;flex-wrap:wrap}
+.spd{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:var(--ink)}
+.spd.on{background:var(--sea);border-color:var(--sea);color:#fff}
 .imgview{display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.92);align-items:center;justify-content:center;padding:20px}
 .imgview.on{display:flex}.imgview img{max-width:100%;max-height:100%;border-radius:8px}
 .act .ic{font-size:18px;width:22px;text-align:center}
@@ -128,7 +131,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v20";
+const VERSION="v21";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -242,7 +245,7 @@ function renderDetail(){
       <div class="statusbar"><div class="chk ${e.statut==='fait'?'on':''}" onclick="toggleDone('${j.id}','${e.id}')">${e.statut==='fait'?'✓':''}</div>
         <span style="font-size:13px;color:var(--ink-2)">${e.statut==='fait'?'Fait':'À faire'}</span></div>
       ${rows.length?`<div class="sec-lbl">Infos</div><div class="card">${rows.join("")}</div>`:""}
-      ${acts.length?`<div class="sec-lbl">Actions</div>${acts.join("")}`:""}
+      ${acts.length?`<div class="sec-lbl">Actions</div>${(e.actions||[]).some(a=>a.type==="audio"&&a.texte)?(()=>{const rate=DATA.audioRate||0.85;const mk=(r,l)=>`<button class="spd${Math.abs(rate-r)<0.01?' on':''}" onclick="setRate(${r})">${l}</button>`;return `<div class="speedrow">🔊 Vitesse&nbsp;: ${mk(0.7,'Lent')}${mk(0.85,'Moyen')}${mk(1,'Normal')}</div>`;})():""}${acts.join("")}`:""}
       ${e.notes?`<div class="sec-lbl">Notes</div><div class="notes-box">${esc(e.notes)}</div>`:""}
       <button class="btn primary" onclick="editEvent('${j.id}','${e.id}')">Modifier l'étape</button>
       <button class="btn del" onclick="delEvent('${j.id}','${e.id}')">Supprimer l'étape</button>
@@ -262,8 +265,9 @@ function speakAction(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes
   stopSpeak();SPK={jid:jid,eid:eid,ai:ai};
   const chunks=a.texte.replace(/\s+/g,' ').trim().match(/[^.!?…]+[.!?…]*/g)||[a.texte];
   const voices=speechSynthesis.getVoices();const fr=voices.find(v=>/fr[-_]?FR/i.test(v.lang))||voices.find(v=>/^fr/i.test(v.lang));
-  chunks.forEach((c,idx)=>{const u=new SpeechSynthesisUtterance(c.trim());u.lang="fr-FR";u.rate=0.97;if(fr)u.voice=fr;if(idx===chunks.length-1)u.onend=()=>{if(SPK&&SPK.jid===jid&&SPK.eid===eid&&SPK.ai===ai){SPK=null;render();}};speechSynthesis.speak(u);});
+  chunks.forEach((c,idx)=>{const u=new SpeechSynthesisUtterance(c.trim());u.lang="fr-FR";u.rate=DATA.audioRate||0.85;if(fr)u.voice=fr;if(idx===chunks.length-1)u.onend=()=>{if(SPK&&SPK.jid===jid&&SPK.eid===eid&&SPK.ai===ai){SPK=null;render();}};speechSynthesis.speak(u);});
   render();}
+function setRate(r){DATA.audioRate=r;stopSpeak();save();render();}
 async function toggleDone(jid,eid){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);e.statut=e.statut==="fait"?"prevu":"fait";await save();render();}
 
 /* ---- sheet ---- */
