@@ -128,7 +128,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v16";
+const VERSION="v17";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -212,7 +212,7 @@ function renderItin(){
     <div class="top"><span class="sp"></span><h1>${esc(t.titre)} (${VERSION})</h1><button class="add" onclick="addEvent()">+</button></div>
     <div class="wrap">${t.jours.length?days:'<div class="empty">Aucune journée.</div>'}
       <button class="addday" onclick="editDay()">+ Ajouter une journée</button>
-      <div class="ver">Mes Voyages · ${VERSION}</div>
+      <div class="ver">Mes Voyages · ${VERSION} · <a onclick="resetTrip()" style="color:var(--coral);text-decoration:underline">recharger le modèle</a></div>
     </div>`;
 }
 
@@ -255,6 +255,7 @@ function closeImg(){$("imgView").classList.remove("on");$("imgView").innerHTML="
 function openAtt(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.data)return;try{const url=URL.createObjectURL(dataUrlToBlob(a.data));window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(err){const w=window.open();if(w)w.location=a.data;}}
 function back(){view="itin";cur=null;render();}
 async function toggleDone(jid,eid){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);e.statut=e.statut==="fait"?"prevu":"fait";await save();render();}
+async function resetTrip(){if(!confirm("Recharger le voyage d'origine ?\n\nCela REMPLACE tout par le modèle à jour et EFFACE tes modifications locales (étapes ajoutées, photos, fichiers).\n\nÀ utiliser après une mise à jour de l'appli."))return;DATA=seed();await save();view="itin";cur=null;render();}
 
 /* ---- sheet ---- */
 function openSheet(html){$("sheet").innerHTML=html;$("sheetBg").classList.add("on");}
@@ -366,7 +367,11 @@ function seed(){
       ev("21:00","","Restaurant","Dîner — Porto Rino",{lieu:"Porto Rino, Elounda",tel:"+30 2841 041518",reserve:false,f:{cuisine:"Italien / pizza"}})
     ]),
     day("2026-06-17","Spinalonga, Kritsa & Agios Nikolaos",[
-      ev("10:00","12:15","Visite","Spinalonga",{lieu:"Spinalonga (bateau depuis Plaka)",notes:"Bateau depuis Plaka, audioguide recommandé. Forteresse vénitienne + ancienne léproserie."}),
+      ev("09:00","09:30","Autre","Petit-déjeuner",{lieu:"Enorme Infinity, Elounda"}),
+      ev("09:30","09:45","Trajet","Trajet hôtel → Plaka",{f:{depart:"Enorme Infinity, Elounda",arrivee:"Plaka",duree:"~15 min"}}),
+      ev("10:00","10:15","Transport","Bateau Plaka → Spinalonga",{f:{depart:"Plaka",arrivee:"Spinalonga"}}),
+      ev("10:15","11:55","Visite","Visite de Spinalonga",{lieu:"Spinalonga",notes:"Audioguide recommandé. Forteresse vénitienne + ancienne léproserie."}),
+      ev("12:00","12:15","Transport","Bateau Spinalonga → Plaka",{f:{depart:"Spinalonga",arrivee:"Plaka"}}),
       ev("12:25","13:35","Restaurant","Déjeuner — PORTA Resto Bar",{lieu:"PORTA Resto Bar, Plaka",tel:"+30 2841 041110",reserve:false,f:{cuisine:"Crétoise, vue Spinalonga"}}),
       ev("14:20","14:50","Visite","Panagia Kera — fresques byzantines",{lieu:"Panagia Kera, Kritsa",cout:"2 €",f:{horaires:"Ferme à 15h"}}),
       ev("14:55","16:10","Visite","Village de Kritsa",{lieu:"Kritsa",notes:"Ruelles, artisanat, café grec / loukoumades."}),
