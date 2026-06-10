@@ -127,7 +127,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v14";
+const VERSION="v15";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -159,10 +159,10 @@ function fToChamps(groupe,f){f=f||{};const defs=GROUPS[groupe]||[];const out=def
   Object.keys(f).forEach(k=>{if(!defs.some(d=>d[0]===k)&&f[k])out.push({label:k,value:f[k]});});return out;}
 const NAME_L=["nom"],ADDR_L=["adresse","adresse / lieu","lieu"],TEL_L=["téléphone","telephone","tél","tel"];
 function chFind(e,set){return (e.champs||[]).find(c=>set.includes((c.label||"").trim().toLowerCase()));}
-function etName(e){const c=chFind(e,NAME_L);if(c&&c.value)return c.value;const f=(e.champs||[]).find(c=>c.value);return f?f.value:"(sans nom)";}
+function etName(e){if(e.titre&&e.titre.trim())return e.titre;const f=(e.champs||[]).find(c=>c.value);return f?f.value:"(sans nom)";}
 function etAddr(e){const c=chFind(e,ADDR_L);return c?c.value:"";}
 function etTel(e){const c=chFind(e,TEL_L);return c?c.value:"";}
-function defChamps(groupe){const base=["Nom","Adresse","Téléphone"];const grp=(GROUPS[groupe]||[]).map(([k,l])=>l);return base.concat(grp).map(l=>({label:l,value:""}));}
+function defChamps(groupe){const base=["Adresse","Téléphone"];const grp=(GROUPS[groupe]||[]).map(([k,l])=>l);return base.concat(grp).map(l=>({label:l,value:""}));}
 
 /* ---- storage ---- */
 let DB=null,MEM={},useMem=false;
@@ -186,6 +186,7 @@ function migrate(){const t=DATA.trip;if(!t)return;(t.jours||[]).forEach(j=>(j.et
     e.champs=head.concat(e.champs);delete e.nom;delete e.lieu;delete e.tel;
   }
   if(e.actions===undefined){e.actions=(e.liens||[]).filter(l=>l&&(l.label||l.url)).map(l=>({type:"lien",label:l.label||"",url:l.url||""}));delete e.liens;}
+  if(e.titre===undefined){const ni=(e.champs||[]).findIndex(c=>(c.label||"").trim().toLowerCase()==="nom");if(ni>=0){e.titre=e.champs[ni].value||"";e.champs.splice(ni,1);}else e.titre="";}
 }));}
 const trip=()=>DATA.trip;
 function sortDay(j){if(j&&j.etapes)j.etapes.sort((a,b)=>(a.debut||"99:99").localeCompare(b.debut||"99:99"));}
@@ -266,10 +267,10 @@ let EDIT=null,EDIT_CTX=null;
 function editEvent(jid,eid){const j=trip().jours.find(x=>x.id===jid);const e=j.etapes.find(x=>x.id===eid);
   EDIT=JSON.parse(JSON.stringify(e));EDIT_CTX={jid:jid,eid:eid,origJid:jid};renderEditor();}
 function addEvent(){const first=trip().jours[0];
-  EDIT={id:uid(),debut:"",fin:"",groupe:"Visite",cout:"",reserve:null,champs:defChamps("Visite"),actions:[],notes:"",statut:"prevu"};
+  EDIT={id:uid(),debut:"",fin:"",groupe:"Visite",titre:"",cout:"",reserve:null,champs:defChamps("Visite"),actions:[],notes:"",statut:"prevu"};
   EDIT_CTX={jid:first?first.id:null,eid:null,origJid:null};renderEditor();}
 function captureEditor(){
-  EDIT.debut=val("f_debut");EDIT.fin=val("f_fin");EDIT.groupe=$("f_groupe").value;EDIT.cout=val("f_cout");
+  EDIT.debut=val("f_debut");EDIT.fin=val("f_fin");EDIT.groupe=$("f_groupe").value;EDIT.cout=val("f_cout");EDIT.titre=val("f_titre");
   const rs=$("f_reserve").value;EDIT.reserve=rs===""?null:rs==="1";
   EDIT.champs=(EDIT.champs||[]).map((c,i)=>({label:$("cl_"+i)?$("cl_"+i).value.trim():c.label,value:$("cv_"+i)?$("cv_"+i).value.trim():c.value}));
   EDIT.actions=(EDIT.actions||[]).map((a,i)=>{
@@ -305,8 +306,9 @@ function renderEditor(){
     ${jourSel}
     <div class="field timerow"><div><label>Début</label><input id="f_debut" type="time" value="${e.debut||""}"></div>
       <div><label>Fin</label><input id="f_fin" type="time" value="${e.fin||""}"></div></div>
+    <div class="field"><label>Titre de l'étape</label><input id="f_titre" value="${esc(e.titre||"")}" placeholder="ex. Vol Paris → Héraklion"></div>
     <div class="field"><label>Groupe</label><select id="f_groupe" onchange="onGroupChange()">${GROUP_NAMES.map(g=>`<option ${g===e.groupe?"selected":""}>${g}</option>`).join("")}</select></div>
-    <div class="field"><label>Infos (champs libres — nom, adresse, téléphone…)</label>${champsRows}<button class="btn ghost sm" onclick="addChamp()">+ Ajouter un champ</button></div>
+    <div class="field"><label>Infos (champs libres — adresse, téléphone…)</label>${champsRows}<button class="btn ghost sm" onclick="addChamp()">+ Ajouter un champ</button></div>
     <div class="field r2"><div><label>Coût</label><input id="f_cout" value="${esc(e.cout)}" placeholder="ex. 320 €"></div>
       <div><label>Réservé</label><select id="f_reserve"><option value="">—</option><option value="1" ${e.reserve===true?"selected":""}>Oui</option><option value="0" ${e.reserve===false?"selected":""}>Non</option></select></div></div>
     <div class="field"><label>Actions</label>${actRows}
@@ -315,7 +317,7 @@ function renderEditor(){
     <button class="btn primary" onclick="saveEvent()">Enregistrer</button>
     ${isNew?"":`<button class="btn del" onclick="delEvent('${EDIT_CTX.jid}','${EDIT_CTX.eid}')">Supprimer l'étape</button>`}`);
 }
-async function saveEvent(){captureEditor();if(!(EDIT.champs||[]).some(c=>c.value)){alert("Renseigne au moins le nom de l'étape.");return;}
+async function saveEvent(){captureEditor();if(!(EDIT.titre||"").trim()){alert("Donne un titre à l'étape.");return;}
   EDIT.actions=(EDIT.actions||[]).filter(a=>a.type==="lien"?(a.label||a.url):a.type==="plan"?(a.depart||a.arrivee):a.data);
   EDIT.champs=(EDIT.champs||[]).filter(c=>c.label||c.value);
   const target=trip().jours.find(x=>x.id===EDIT_CTX.jid);if(!target)return;
@@ -346,11 +348,11 @@ async function delDay(jid){if(!confirm("Supprimer cette journée et ses étapes 
 
 /* ---- seed : la Crète ---- */
 function ev(debut,fin,groupe,nom,o){o=o||{};
-  const champs=[{label:"Nom",value:nom||""},{label:"Adresse",value:o.lieu||""},{label:"Téléphone",value:o.tel||""}];
+  const champs=[{label:"Adresse",value:o.lieu||""},{label:"Téléphone",value:o.tel||""}];
   const f=o.f||{},defs=GROUPS[groupe]||[];
   defs.forEach(([k,l])=>champs.push({label:l,value:f[k]||""}));
   Object.keys(f).forEach(k=>{if(!defs.some(d=>d[0]===k)&&f[k])champs.push({label:k,value:f[k]});});
-  const e={id:uid(),debut:debut||"",fin:fin||"",groupe:groupe,cout:o.cout||"",champs:champs,actions:(o.liens||[]).filter(l=>l&&(l.label||l.url)).map(l=>({type:"lien",label:l.label||"",url:l.url||""})),notes:o.notes||"",statut:"prevu"};
+  const e={id:uid(),debut:debut||"",fin:fin||"",groupe:groupe,titre:nom||"",cout:o.cout||"",champs:champs,actions:(o.liens||[]).filter(l=>l&&(l.label||l.url)).map(l=>({type:"lien",label:l.label||"",url:l.url||""})),notes:o.notes||"",statut:"prevu"};
   e.reserve=("reserve"in o)?o.reserve:null;return e;}
 function day(date,titre,etapes){return{id:uid(),date:date,titre:titre,etapes:etapes};}
 function seed(){
