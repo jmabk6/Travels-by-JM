@@ -98,7 +98,10 @@ a{color:inherit;text-decoration:none}
 .field{margin-bottom:13px}
 .field label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);margin-bottom:5px}
 .field input,.field select,.field textarea{width:100%;min-width:0;max-width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff;color:var(--ink)}
+.field input[type=time]{text-align:left}
+.field input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0}
 .field.r2{display:flex;gap:10px}.field.r2>div{flex:1;min-width:0}
+.field input[type=time]{text-align:left}
 .lienrow{border:1px solid var(--line);border-radius:10px;padding:9px;margin-bottom:8px;background:#fff}
 .lienrow input{margin-bottom:6px}
 .lienrow input:last-of-type{margin-bottom:0}
@@ -111,7 +114,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v10";
+const VERSION="v11";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
