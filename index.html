@@ -76,6 +76,16 @@ a{color:inherit;text-decoration:none}
 .row .v{flex:1;font-weight:500}
 .row.cost .v{font-weight:700;color:var(--sea-deep);font-size:16px}
 .act{display:flex;align-items:center;gap:11px;width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:15px;font-weight:600;margin-bottom:9px}
+.act>span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.actrow{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:#fff}
+.actrow input{margin-bottom:6px}
+.actrow .ah{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);margin-bottom:7px}
+.actadd{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.actadd button{flex:1;min-width:46%;border:1.5px dashed var(--line);border-radius:10px;padding:10px;font-size:13px;font-weight:600;color:var(--sea)}
+.filebtn{display:inline-block;border:1px solid var(--line);border-radius:8px;padding:9px 12px;background:#fff;font-size:14px;font-weight:600;color:var(--sea)}
+.filebtn input{display:none}
+.imgview{display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.92);align-items:center;justify-content:center;padding:20px}
+.imgview.on{display:flex}.imgview img{max-width:100%;max-height:100%;border-radius:8px}
 .act .ic{font-size:18px;width:22px;text-align:center}
 .act .go{margin-left:auto;color:var(--sea);font-size:18px}
 .notes-box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:14px;line-height:1.5;color:#3c4658;white-space:pre-wrap}
@@ -113,13 +123,18 @@ a{color:inherit;text-decoration:none}
 <body>
 <div class="app" id="app"></div>
 <div class="sheet-bg" id="sheetBg"><div class="sheet" id="sheet"></div></div>
+<div class="imgview" id="imgView" onclick="closeImg()"></div>
 
 <script>
 "use strict";
-const VERSION="v12";
+const VERSION="v13";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function readFile(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
+function readImage(file,max=1600,q=0.82){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>max||h>max){const s=Math.min(max/w,max/h);w=Math.round(w*s);h=Math.round(h*s);}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);res(c.toDataURL("image/jpeg",q));};img.onerror=rej;img.src=r.result;};r.onerror=rej;r.readAsDataURL(file);});}
+function dataUrlToBlob(d){const p=d.split(",");const mime=(p[0].match(/:(.*?);/)||[])[1]||"application/octet-stream";const bin=atob(p[1]);const u=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u[k]=bin.charCodeAt(k);return new Blob([u],{type:mime});}
+function dirUrl(dep,arr){return "https://maps.apple.com/?"+(dep?("saddr="+encodeURIComponent(dep)+"&"):"")+"daddr="+encodeURIComponent(arr||"");}
 const FR_D=["dim","lun","mar","mer","jeu","ven","sam"],FR_M=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
 function dShort(iso){if(!iso)return"";const d=new Date(iso+"T12:00");return FR_D[d.getDay()]+" "+d.getDate()+" "+FR_M[d.getMonth()];}
 function fmtTime(s){return s?String(s).replace(":","h"):"";}
@@ -169,7 +184,9 @@ function migrate(){const t=DATA.trip;if(!t)return;(t.jours||[]).forEach(j=>(j.et
     if(!has("Adresse"))head.push({label:"Adresse",value:e.lieu||""});
     if(!has("Téléphone"))head.push({label:"Téléphone",value:e.tel||""});
     e.champs=head.concat(e.champs);delete e.nom;delete e.lieu;delete e.tel;
-  }}));}
+  }
+  if(e.actions===undefined){e.actions=(e.liens||[]).filter(l=>l&&(l.label||l.url)).map(l=>({type:"lien",label:l.label||"",url:l.url||""}));delete e.liens;}
+}));}
 const trip=()=>DATA.trip;
 function sortDay(j){if(j&&j.etapes)j.etapes.sort((a,b)=>(a.debut||"99:99").localeCompare(b.debut||"99:99"));}
 
@@ -207,9 +224,14 @@ function renderDetail(){
   if(e.cout)rows.push(`<div class="row cost"><span class="k">Coût</span><span class="v">${esc(e.cout)}</span></div>`);
   const reservePill=e.reserve===true?'<span class="pill ok">Réservé</span>':e.reserve===false?'<span class="pill no">À réserver</span>':"";
   const acts=[];
-  if(addr||nm!=="(sans nom)")acts.push(`<a class="act" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener"><span class="ic">📍</span><span>Plan / itinéraire</span><span class="go">›</span></a>`);
+  if(addr||nm!=="(sans nom)")acts.push(`<a class="act" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener"><span class="ic">📍</span><span>Voir sur le plan</span><span class="go">›</span></a>`);
   if(tel)acts.push(`<a class="act" href="tel:${esc(tel).replace(/\s/g,'')}"><span class="ic">📞</span><span>Appeler — ${esc(tel)}</span><span class="go">›</span></a>`);
-  (e.liens||[]).forEach(l=>{if(l.label||l.url)acts.push(`<a class="act" ${l.url?`href="${esc(l.url)}" target="_blank" rel="noopener"`:""}><span class="ic">🔗</span><span>${esc(l.label||"Lien")}</span><span class="go">›</span></a>`);});
+  (e.actions||[]).forEach((a,ai)=>{
+    if(a.type==="lien"&&(a.label||a.url))acts.push(`<a class="act" ${a.url?`href="${esc(a.url)}" target="_blank" rel="noopener"`:""}><span class="ic">🔗</span><span>${esc(a.label||a.url||"Lien")}</span><span class="go">›</span></a>`);
+    else if(a.type==="plan"&&(a.depart||a.arrivee))acts.push(`<a class="act" href="${dirUrl(a.depart,a.arrivee)}" target="_blank" rel="noopener"><span class="ic">🧭</span><span>${esc(a.depart||"?")} → ${esc(a.arrivee||"?")}</span><span class="go">›</span></a>`);
+    else if(a.type==="fichier"&&a.data)acts.push(`<a class="act" onclick="openAtt('${j.id}','${e.id}',${ai})"><span class="ic">📄</span><span>${esc(a.name||"Fichier")}</span><span class="go">›</span></a>`);
+    else if(a.type==="photo"&&a.data)acts.push(`<a class="act" onclick="openImg('${j.id}','${e.id}',${ai})"><span class="ic">🖼</span><span>${esc(a.name||"Photo")}</span><span class="go">›</span></a>`);
+  });
   $("app").innerHTML=`
     <div class="top"><button class="back" onclick="back()">‹ Itinéraire</button><h1>${esc(j.titre)}</h1><span class="sp"></span></div>
     <div class="wrap">
@@ -228,6 +250,9 @@ function renderDetail(){
 
 /* ---- nav ---- */
 function openDetail(jid,eid){cur={jid:jid,eid:eid};view="detail";render();}
+function openImg(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.data)return;$("imgView").innerHTML=`<img src="${a.data}" alt="">`;$("imgView").classList.add("on");}
+function closeImg(){$("imgView").classList.remove("on");$("imgView").innerHTML="";}
+function openAtt(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.data)return;try{const url=URL.createObjectURL(dataUrlToBlob(a.data));window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(err){const w=window.open();if(w)w.location=a.data;}}
 function back(){view="itin";cur=null;render();}
 async function toggleDone(jid,eid){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);e.statut=e.statut==="fait"?"prevu":"fait";await save();render();}
 
@@ -242,26 +267,39 @@ let EDIT=null,EDIT_CTX=null;
 function editEvent(jid,eid){const j=trip().jours.find(x=>x.id===jid);const e=j.etapes.find(x=>x.id===eid);
   EDIT=JSON.parse(JSON.stringify(e));EDIT_CTX={jid:jid,eid:eid,origJid:jid};renderEditor();}
 function addEvent(){const first=trip().jours[0];
-  EDIT={id:uid(),debut:"",fin:"",groupe:"Visite",cout:"",reserve:null,champs:defChamps("Visite"),liens:[],notes:"",statut:"prevu"};
+  EDIT={id:uid(),debut:"",fin:"",groupe:"Visite",cout:"",reserve:null,champs:defChamps("Visite"),actions:[],notes:"",statut:"prevu"};
   EDIT_CTX={jid:first?first.id:null,eid:null,origJid:null};renderEditor();}
 function captureEditor(){
   EDIT.debut=val("f_debut");EDIT.fin=val("f_fin");EDIT.groupe=$("f_groupe").value;EDIT.cout=val("f_cout");
   const rs=$("f_reserve").value;EDIT.reserve=rs===""?null:rs==="1";
   EDIT.champs=(EDIT.champs||[]).map((c,i)=>({label:$("cl_"+i)?$("cl_"+i).value.trim():c.label,value:$("cv_"+i)?$("cv_"+i).value.trim():c.value}));
-  EDIT.liens=(EDIT.liens||[]).map((l,i)=>({label:$("lk_"+i)?$("lk_"+i).value.trim():l.label,url:$("lu_"+i)?$("lu_"+i).value.trim():l.url}));
+  EDIT.actions=(EDIT.actions||[]).map((a,i)=>{
+    if(a.type==="lien")return{type:"lien",label:$("al_"+i)?$("al_"+i).value.trim():a.label,url:$("au_"+i)?$("au_"+i).value.trim():a.url};
+    if(a.type==="plan")return{type:"plan",depart:$("ad_"+i)?$("ad_"+i).value.trim():a.depart,arrivee:$("aa_"+i)?$("aa_"+i).value.trim():a.arrivee};
+    return a;
+  });
   EDIT.notes=$("f_notes")?$("f_notes").value:EDIT.notes;
   if($("f_jour"))EDIT_CTX.jid=$("f_jour").value;
 }
 function onGroupChange(){captureEditor();if((EDIT.champs||[]).every(c=>!c.value))EDIT.champs=defChamps(EDIT.groupe);renderEditor();}
 function addChamp(){captureEditor();EDIT.champs=EDIT.champs||[];EDIT.champs.push({label:"",value:""});renderEditor();}
 function rmChamp(i){captureEditor();EDIT.champs.splice(i,1);renderEditor();}
-function addLien(){captureEditor();EDIT.liens.push({label:"",url:""});renderEditor();}
-function rmLien(i){captureEditor();EDIT.liens.splice(i,1);renderEditor();}
+function addAction(type){captureEditor();EDIT.actions=EDIT.actions||[];const a=type==="lien"?{type:"lien",label:"",url:""}:type==="plan"?{type:"plan",depart:"",arrivee:""}:{type:type};EDIT.actions.push(a);renderEditor();}
+function rmAction(i){captureEditor();EDIT.actions.splice(i,1);renderEditor();}
+async function pickFile(i){captureEditor();const inp=$("af_"+i),f=inp&&inp.files&&inp.files[0];if(!f)return;try{const data=await readFile(f);EDIT.actions[i]={type:"fichier",name:f.name,mime:f.type,data:data};renderEditor();}catch(e){alert("Impossible de lire le fichier.");}}
+async function pickPhoto(i){captureEditor();const inp=$("ap_"+i),f=inp&&inp.files&&inp.files[0];if(!f)return;try{const data=await readImage(f);EDIT.actions[i]={type:"photo",name:f.name||"photo.jpg",data:data};renderEditor();}catch(e){alert("Impossible de lire la photo.");}}
 function renderEditor(){
   const e=EDIT,isNew=EDIT_CTX.eid===null;
   const jourSel=`<div class="field"><label>Journée</label><select id="f_jour">${trip().jours.map(j=>`<option value="${j.id}" ${j.id===EDIT_CTX.jid?"selected":""}>${esc(dShort(j.date))} — ${esc(j.titre)}</option>`).join("")}</select></div>`;
   const champsRows=(e.champs||[]).map((c,i)=>`<div class="lienrow"><input id="cl_${i}" value="${esc(c.label)}" placeholder="Nom du champ (ex. Compagnie)"><input id="cv_${i}" value="${esc(c.value)}" placeholder="Valeur"><button class="btn ghost sm" style="margin-top:6px;color:var(--coral)" onclick="rmChamp(${i})">Supprimer ce champ</button></div>`).join("");
-  const liens=(e.liens||[]).map((l,i)=>`<div class="lienrow"><input id="lk_${i}" value="${esc(l.label)}" placeholder="Libellé (ex. Mail de résa, TripAdvisor)"><input id="lu_${i}" value="${esc(l.url)}" inputmode="url" placeholder="https://…"><button class="btn ghost sm" style="margin-top:6px;color:var(--coral)" onclick="rmLien(${i})">Retirer</button></div>`).join("");
+  const actRows=(e.actions||[]).map((a,i)=>{
+    const rm=`<button class="btn ghost sm" style="margin-top:6px;color:var(--coral)" onclick="rmAction(${i})">Retirer</button>`;
+    if(a.type==="lien")return `<div class="actrow"><div class="ah">🔗 Lien</div><input id="al_${i}" value="${esc(a.label)}" placeholder="Libellé (ex. TripAdvisor)"><input id="au_${i}" value="${esc(a.url)}" inputmode="url" placeholder="https://…">${rm}</div>`;
+    if(a.type==="plan")return `<div class="actrow"><div class="ah">🧭 Plan (itinéraire)</div><input id="ad_${i}" value="${esc(a.depart)}" placeholder="Départ (ex. Elounda)"><input id="aa_${i}" value="${esc(a.arrivee)}" placeholder="Arrivée (ex. Plaka)">${rm}</div>`;
+    if(a.type==="fichier")return `<div class="actrow"><div class="ah">📄 Fichier</div><label class="filebtn">${a.data?"Remplacer le fichier":"Choisir un fichier"}<input type="file" id="af_${i}" onchange="pickFile(${i})"></label>${a.name?`<div style="margin-top:6px;font-size:13px;color:var(--ink-2)">${esc(a.name)}</div>`:""}${rm}</div>`;
+    if(a.type==="photo")return `<div class="actrow"><div class="ah">🖼 Photo</div><label class="filebtn">${a.data?"Remplacer la photo":"Choisir une photo"}<input type="file" accept="image/*" id="ap_${i}" onchange="pickPhoto(${i})"></label>${a.data?`<div style="margin-top:8px"><img src="${a.data}" style="max-width:100%;max-height:140px;border-radius:8px"></div>`:""}${rm}</div>`;
+    return "";
+  }).join("");
   openSheet(`<h2>${isNew?"Nouvelle étape":"Modifier l'étape"}</h2>
     ${jourSel}
     <div class="field timerow"><div><label>Début</label><input id="f_debut" type="time" value="${e.debut||""}"></div>
@@ -270,13 +308,14 @@ function renderEditor(){
     <div class="field"><label>Infos (champs libres — nom, adresse, téléphone…)</label>${champsRows}<button class="btn ghost sm" onclick="addChamp()">+ Ajouter un champ</button></div>
     <div class="field r2"><div><label>Coût</label><input id="f_cout" value="${esc(e.cout)}" placeholder="ex. 320 €"></div>
       <div><label>Réservé</label><select id="f_reserve"><option value="">—</option><option value="1" ${e.reserve===true?"selected":""}>Oui</option><option value="0" ${e.reserve===false?"selected":""}>Non</option></select></div></div>
-    <div class="field"><label>Liens</label>${liens}<button class="btn ghost sm" onclick="addLien()">+ Ajouter un lien</button></div>
+    <div class="field"><label>Actions</label>${actRows}
+      <div class="actadd"><button onclick="addAction('lien')">🔗 Lien</button><button onclick="addAction('plan')">🧭 Plan</button><button onclick="addAction('fichier')">📄 Fichier</button><button onclick="addAction('photo')">🖼 Photo</button></div></div>
     <div class="field"><label>Notes</label><textarea id="f_notes" style="min-height:80px">${esc(e.notes)}</textarea></div>
     <button class="btn primary" onclick="saveEvent()">Enregistrer</button>
     ${isNew?"":`<button class="btn del" onclick="delEvent('${EDIT_CTX.jid}','${EDIT_CTX.eid}')">Supprimer l'étape</button>`}`);
 }
 async function saveEvent(){captureEditor();if(!(EDIT.champs||[]).some(c=>c.value)){alert("Renseigne au moins le nom de l'étape.");return;}
-  EDIT.liens=(EDIT.liens||[]).filter(l=>l.label||l.url);
+  EDIT.actions=(EDIT.actions||[]).filter(a=>a.type==="lien"?(a.label||a.url):a.type==="plan"?(a.depart||a.arrivee):a.data);
   EDIT.champs=(EDIT.champs||[]).filter(c=>c.label||c.value);
   const target=trip().jours.find(x=>x.id===EDIT_CTX.jid);if(!target)return;
   if(EDIT_CTX.eid===null){target.etapes.push(EDIT);}
@@ -310,7 +349,7 @@ function ev(debut,fin,groupe,nom,o){o=o||{};
   const f=o.f||{},defs=GROUPS[groupe]||[];
   defs.forEach(([k,l])=>champs.push({label:l,value:f[k]||""}));
   Object.keys(f).forEach(k=>{if(!defs.some(d=>d[0]===k)&&f[k])champs.push({label:k,value:f[k]});});
-  const e={id:uid(),debut:debut||"",fin:fin||"",groupe:groupe,cout:o.cout||"",champs:champs,liens:o.liens||[],notes:o.notes||"",statut:"prevu"};
+  const e={id:uid(),debut:debut||"",fin:fin||"",groupe:groupe,cout:o.cout||"",champs:champs,actions:(o.liens||[]).filter(l=>l&&(l.label||l.url)).map(l=>({type:"lien",label:l.label||"",url:l.url||""})),notes:o.notes||"",statut:"prevu"};
   e.reserve=("reserve"in o)?o.reserve:null;return e;}
 function day(date,titre,etapes){return{id:uid(),date:date,titre:titre,etapes:etapes};}
 function seed(){
