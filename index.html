@@ -36,27 +36,49 @@ a{color:inherit;text-decoration:none}
 .wrap{padding:6px 16px calc(var(--safe-b) + 40px)}
 
 /* day */
-.day-h{display:flex;align-items:baseline;gap:10px;margin:18px 0 4px}
-.day-h .d{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--sea-deep);text-transform:uppercase}
-.day-h .t{font-family:var(--serif);font-size:19px;font-weight:600;flex:1}
-.day-h .edit{font-size:13px;color:var(--sea);font-weight:600}
+.day{margin:22px 0 6px}
+.day-banner{display:flex;align-items:center;gap:13px;padding:13px 14px;border-radius:18px;
+  background:linear-gradient(135deg,var(--sea-deep),var(--sea) 72%,#1A9AA0);color:#fff;
+  box-shadow:0 8px 20px rgba(11,95,103,.22)}
+.day-num{flex:0 0 auto;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.15);
+  border:1.5px solid rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:21px;font-weight:600}
+.day-meta{flex:1;min-width:0}
+.day-date{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#F4D9A2}
+.day-title{font-family:var(--serif);font-size:18.5px;font-weight:600;line-height:1.18;margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.day-edit{flex:0 0 auto;align-self:flex-start;font-size:12px;font-weight:700;color:#fff;
+  background:rgba(255,255,255,.18);padding:5px 11px;border-radius:999px}
+.steps{display:flex;flex-direction:column;gap:9px;padding:11px 0 0}
+.ev-empty{font-size:13px;color:var(--ink-2);padding:8px 4px}
 
-/* event row */
-.ev{display:flex;align-items:stretch}
-.ev .time{flex:0 0 64px;text-align:right;padding:12px 12px 0 0;color:var(--sea-deep);font-weight:600;font-size:12.5px;line-height:1.4;white-space:nowrap}
-.ev .rail{flex:0 0 18px;position:relative}
-.ev .rail::before{content:"";position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--line)}
-.ev .rail .dot{position:absolute;left:3px;top:15px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--sea)}
-.ev.done .rail .dot{background:var(--sea)}
-.ev:first-of-type .rail::before{top:15px}
-.ev:last-of-type .rail::before{height:15px}
-.ev .c{flex:1;padding:11px 0 14px 8px;border-bottom:1px solid var(--line-2);display:flex;align-items:flex-start;gap:8px}
-.ev:last-of-type .c{border-bottom:none}
-.ev .c .txt{flex:1}
-.ev .ttl{font-size:15.5px;font-weight:600;line-height:1.3}
-.ev.done .ttl{color:var(--ink-2);text-decoration:line-through}
-.ev .sub{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin-top:3px}
-.ev .chev{color:var(--sea);font-size:20px;align-self:center}
+/* event card */
+.ev{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);
+  border-radius:15px;padding:9px 12px 9px 10px}
+.ev-time{flex:0 0 44px;text-align:right;font-size:11.5px;font-weight:700;color:var(--sea-deep);line-height:1.35;white-space:nowrap}
+.ev-chip{flex:0 0 auto;width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+  font-size:19px;background:var(--gb)}
+.ev-body{flex:1;min-width:0}
+.ev-ttl{font-size:15px;font-weight:600;line-height:1.26}
+.ev-tag{font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--gc);margin-top:3px}
+.ev-chev{flex:0 0 auto;color:var(--ink-2);font-size:19px}
+
+/* highlight (visites, nature, activités) */
+.ev.t-hi{border:1px solid var(--gb);border-left:4px solid var(--gc);box-shadow:0 4px 13px rgba(27,42,65,.07)}
+.ev.t-hi .ev-ttl{font-size:16.5px;font-weight:700}
+.ev.t-hi .ev-chip{width:44px;height:44px;font-size:22px}
+
+/* muted (trajets) — en retrait */
+.ev.t-mute{background:transparent;border:none;border-radius:0;padding:1px 12px 1px 10px;opacity:.6}
+.ev.t-mute .ev-chip{width:26px;height:26px;border-radius:9px;font-size:13px;background:#E9E6DD}
+.ev.t-mute .ev-ttl{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.ev.t-mute .ev-tag{display:none}
+.ev.t-mute .ev-time{font-size:10.5px;color:var(--ink-2);font-weight:600}
+.ev.t-mute .ev-chev{font-size:15px;opacity:.7}
+
+/* done */
+.ev.done{opacity:.5}
+.ev.done .ev-ttl{text-decoration:line-through}
 
 .addday{display:block;width:100%;text-align:center;margin-top:22px;color:var(--sea);font-weight:600;font-size:14px;padding:10px;border:1.5px dashed var(--line);border-radius:12px}
 .ver{text-align:center;color:var(--ink-2);font-size:11px;opacity:.5;margin-top:26px}
@@ -131,7 +153,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v22";
+const VERSION="v23";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -142,6 +164,8 @@ function dirUrl(dep,arr){return "https://www.google.com/maps/dir/?api=1&origin="
 function mapUrl(adr){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(adr||"");}
 const FR_D=["dim","lun","mar","mer","jeu","ven","sam"],FR_M=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
 function dShort(iso){if(!iso)return"";const d=new Date(iso+"T12:00");return FR_D[d.getDay()]+" "+d.getDate()+" "+FR_M[d.getMonth()];}
+const FR_DL=["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
+function dLong(iso){if(!iso)return"";const d=new Date(iso+"T12:00");return FR_DL[d.getDay()]+" "+d.getDate()+" "+FR_M[d.getMonth()];}
 function fmtTime(s){return s?String(s).replace(":","h"):"";}
 function timeStack(e){const a=fmtTime(e.debut),b=fmtTime(e.fin);return a?(b?a+"<br>"+b:a):"";}
 
@@ -160,6 +184,20 @@ const GROUPS={
  "Autre":[]
 };
 const GROUP_NAMES=Object.keys(GROUPS);
+const GMETA={
+ "Vol":{i:"✈️",c:"#4A6582",b:"#E7ECF1",t:"warm"},
+ "Transport":{i:"⛴️",c:"#3E8E9C",b:"#E2F0F1",t:"warm"},
+ "Voiture":{i:"🚗",c:"#5E6E84",b:"#E9ECF1",t:"warm"},
+ "Trajet":{i:"🚗",c:"#A0A6AD",b:"#ECEAE3",t:"mute"},
+ "Hôtel":{i:"🏨",c:"#0E7C86",b:"#DEEFEF",t:"warm"},
+ "Restaurant":{i:"🍽️",c:"#C2693F",b:"#F6E7DD",t:"warm"},
+ "Visite":{i:"🏛️",c:"#C75D4F",b:"#F8E7E3",t:"hi"},
+ "Activité":{i:"🎨",c:"#C98A2B",b:"#F7EEDB",t:"hi"},
+ "Nature":{i:"🌿",c:"#4F8A5B",b:"#E6F1E8",t:"hi"},
+ "Bien-être":{i:"💆",c:"#5AA0A6",b:"#E3F1F1",t:"warm"},
+ "Autre":{i:"📍",c:"#6B7689",b:"#ECEDEE",t:"warm"}
+};
+function gmeta(g){return GMETA[g]||GMETA["Autre"];}
 function fToChamps(groupe,f){f=f||{};const defs=GROUPS[groupe]||[];const out=defs.map(([k,l])=>({label:l,value:f[k]||""}));
   Object.keys(f).forEach(k=>{if(!defs.some(d=>d[0]===k)&&f[k])out.push({label:k,value:f[k]});});return out;}
 const NAME_L=["nom"],ADDR_L=["adresse","adresse / lieu","lieu"],TEL_L=["téléphone","telephone","tél","tel"];
@@ -202,16 +240,22 @@ function render(){view==="detail"?renderDetail():renderItin();}
 
 function renderItin(){
   const t=trip();
-  const days=[...t.jours].sort((a,b)=>(a.date||"")<(b.date||"")?-1:1).map(j=>{sortDay(j);
-    const evs=(j.etapes||[]).map(e=>`
-      <div class="ev ${e.statut==='fait'?'done':''}">
-        <div class="time">${timeStack(e)}</div>
-        <div class="rail"><span class="dot"></span></div>
-        <div class="c" onclick="openDetail('${j.id}','${e.id}')">
-          <div class="txt"><div class="ttl">${esc(etName(e))}</div><div class="sub">${esc(e.groupe||"")}</div></div>
-          <span class="chev">›</span></div>
-      </div>`).join("")||'<div class="ev"><div class="time"></div><div class="rail"><span class="dot"></span></div><div class="c"><div class="txt"><div class="sub">Aucune étape</div></div></div></div>';
-    return `<div class="day-h"><span class="d">${dShort(j.date)}</span><span class="t">${esc(j.titre)}</span><span class="edit" onclick="editDay('${j.id}')">Modifier</span></div>${evs}`;
+  const days=[...t.jours].sort((a,b)=>(a.date||"")<(b.date||"")?-1:1).map((j,di)=>{sortDay(j);
+    const evs=(j.etapes||[]).map(e=>{const m=gmeta(e.groupe);
+      return `<div class="ev t-${m.t} ${e.statut==='fait'?'done':''}" style="--gc:${m.c};--gb:${m.b}" onclick="openDetail('${j.id}','${e.id}')">
+        <div class="ev-time">${timeStack(e)}</div>
+        <div class="ev-chip">${m.i}</div>
+        <div class="ev-body"><div class="ev-ttl">${esc(etName(e))}</div><div class="ev-tag">${esc(e.groupe||"")}</div></div>
+        <span class="ev-chev">›</span></div>`;}).join("")
+      ||'<div class="ev-empty">Aucune étape — touche « Modifier » pour en ajouter.</div>';
+    return `<div class="day">
+      <div class="day-banner">
+        <div class="day-num">${di+1}</div>
+        <div class="day-meta"><div class="day-date">${dLong(j.date)||"Jour "+(di+1)}</div><div class="day-title">${esc(j.titre)}</div></div>
+        <button class="day-edit" onclick="event.stopPropagation();editDay('${j.id}')">Modifier</button>
+      </div>
+      <div class="steps">${evs}</div>
+    </div>`;
   }).join("");
   $("app").innerHTML=`
     <div class="top"><span class="sp"></span><h1>${esc(t.titre)} (${VERSION})</h1><button class="add" onclick="editDay()">+</button></div>
