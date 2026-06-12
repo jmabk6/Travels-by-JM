@@ -153,7 +153,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v23";
+const VERSION="v26";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -434,7 +434,8 @@ function seed(){
         liens:[{label:"Carte d'embarquement",url:""},{label:"Mail de réservation",url:""}],notes:"Arriver 2h avant."}),
       ev("18:30","","Voiture","Prise de la voiture de location",{lieu:"Aéroport d'Héraklion",reserve:true,f:{loueur:"",ref:""}}),
       ev("19:00","20:00","Trajet","Aéroport → Hôtel Enorme Infinity",{lieu:"Enorme Infinity, Elounda",f:{depart:"Aéroport d'Héraklion",arrivee:"Elounda",duree:"~1h"}}),
-      ev("21:00","","Restaurant","Dîner — Porto Rino",{lieu:"Porto Rino, Elounda",tel:"+30 2841 041518",reserve:false,f:{cuisine:"Italien / pizza"}})
+      ev("21:00","","Restaurant","Dîner — Ariadne (pizzeria)",{lieu:"Ariadne Restaurant & Pizzeria, Elounda",tel:"+30 2841 041849",reserve:false,f:{cuisine:"Pizza au feu de bois / italien"}}),
+      ev("22:30","","Autre","Promenade digestive sur le front de mer",{lieu:"Elounda, front de mer"})
     ]),
     day("2026-06-17","Spinalonga, Kritsa & Agios Nikolaos",[
       ev("09:00","09:30","Autre","Petit-déjeuner",{lieu:"Enorme Infinity, Elounda"}),
@@ -444,7 +445,8 @@ function seed(){
       ev("12:00","12:15","Transport","Bateau Spinalonga → Plaka",{f:{depart:"Spinalonga",arrivee:"Plaka"}}),
       ev("12:25","13:35","Restaurant","Déjeuner — PORTA Resto Bar",{lieu:"PORTA Resto Bar, Plaka",tel:"+30 2841 041110",reserve:false,f:{cuisine:"Crétoise, vue Spinalonga"}}),
       ev("14:20","14:50","Visite","Panagia Kera — fresques byzantines",{lieu:"Panagia Kera, Kritsa",cout:"2 €",f:{horaires:"Ferme à 15h"}}),
-      ev("14:55","16:10","Visite","Village de Kritsa",{lieu:"Kritsa",notes:"Ruelles, artisanat, café grec / loukoumades."}),
+      ev("14:55","15:30","Visite","Village de Kritsa",{lieu:"Kritsa",notes:"Ruelles, café grec / loukoumades."}),
+      ev("15:30","16:10","Activité","Tissage — Erginousa's loom",{lieu:"Erginousa's loom, Kritsa",tel:"+30 694 725 0026",notes:"Atelier de tisserande au village : métier à tisser, objets faits main, rencontre."}),
       ev("16:30","19:30","Visite","Agios Nikolaos — lac, port, marina, apéritif",{lieu:"Agios Nikolaos"}),
       ev("20:00","","Restaurant","Dîner — Archontiko",{lieu:"Archontiko, Agios Nikolaos",tel:"+30 694 057 7606",reserve:true})
     ]),
@@ -457,33 +459,45 @@ function seed(){
       ev("20:30","","Restaurant","Dîner — Bluesea Sushi",{lieu:"Bluesea Seafood & Sushi, Elounda",tel:"+30 697 980 6313",reserve:true})
     ]),
     day("2026-06-19","Knossos → Chania",[
-      ev("08:00","","Trajet","Départ tôt vers Knossos",{f:{depart:"Elounda",arrivee:"Knossos"}}),
-      ev("09:30","11:15","Visite","Knossos — visite 3D tablette (FR)",{lieu:"Knossos",reserve:true}),
-      ev("12:50","14:00","Restaurant","Déjeuner — Georgioupoli (port)",{lieu:"Georgioupoli",reserve:false}),
-      ev("14:15","15:15","Nature","Lac de Kournas",{lieu:"Kournas"}),
-      ev("16:00","","Hôtel","Arrivée Samaria Hotel (Chania)",{lieu:"Samaria Hotel, Chania",f:{checkin:"16:00"}}),
-      ev("21:00","","Restaurant","Dîner — Palazzo al Mare",{lieu:"Port de Chania",tel:"+30 2821 008813",reserve:true})
+      ev("08:00","","Trajet","Départ tôt vers Knossos",{f:{depart:"Elounda",arrivee:"Knossos",duree:"~1h"}}),
+      ev("09:30","12:00","Visite","Knossos — visite 3D tablette (FR)",{lieu:"Knossos",reserve:true,notes:"Coupe-file. Tôt pour éviter chaleur et foule."}),
+      ev("12:15","13:30","Restaurant","Déjeuner pâtes — Via Pastarella",{lieu:"Via Pastarella, Héraklion (centre)",tel:"+30 281 028 0505",reserve:true,f:{cuisine:"Pâtes fraîches / italien"}}),
+      ev("13:30","14:15","Visite","Centre historique d'Héraklion",{lieu:"Héraklion",notes:"Fontaine Morosini (place aux Lions), Loggia, forteresse de Koules (extérieur)."}),
+      ev("14:15","16:15","Trajet","Route Héraklion → Chania",{f:{depart:"Héraklion",arrivee:"Chania",duree:"~2h15"}}),
+      ev("16:15","","Hôtel","Arrivée Samaria Hotel — piscine & repos",{lieu:"Samaria Hotel, Chania",f:{checkin:"16:15"},notes:"On souffle avant la soirée."}),
+      ev("18:00","21:30","Activité","Cours de cuisine crétoise (dîner inclus)",{lieu:"Hands on Cretan Cooking — Philippa & Kosta, Kounoupidiana",tel:"+30 697 471 9225",reserve:true,notes:"On cueille au jardin, on cuisine, on dîne ensemble ce qu'on a préparé. Adapté végé/poisson pour Madame, sans porc."})
     ]),
-    day("2026-06-20","Anniversaire · Akrotiri",[
-      ev("10:00","12:30","Visite","Vieille ville de Chania",{lieu:"Chania"}),
-      ev("12:30","13:30","Restaurant","Déjeuner crêpes — Mix & Match",{lieu:"Chania",tel:"+30 2821 043649",reserve:false}),
-      ev("15:00","18:00","Nature","Akrotiri — Agia Triada + baignade",{lieu:"Akrotiri"}),
-      ev("18:30","19:30","Bien-être","Massage de Madame",{lieu:"Chania",reserve:true}),
+    day("2026-06-20","Anniversaire · Akrotiri & vieille ville",[
+      ev("09:00","10:00","Visite","Monastère d'Agia Triada (Akrotiri)",{lieu:"Agia Triada, Akrotiri",cout:"3 €",notes:"Au frais le matin. Tenue couvrante."}),
+      ev("10:15","11:00","Visite","Monastère de Gouverneto",{lieu:"Gouverneto, Akrotiri",f:{horaires:"Le matin jusqu'à 12h (fermé 12h-17h)"},notes:"Tenue couvrante."}),
+      ev("11:00","11:45","Nature","Grotte de l'Ours (Arkoudiotissa)",{lieu:"Akrotiri",notes:"Courte marche depuis Gouverneto, sentier rocheux. À ton rythme."}),
+      ev("12:30","13:45","Restaurant","Déjeuner — Chania",{lieu:"Chania",reserve:false}),
+      ev("14:30","17:30","Visite","Vieille ville de Chania",{lieu:"Chania",notes:"Halles, Splantzia, port, céramistes — superbe à l'heure dorée."}),
+      ev("18:30","19:30","Bien-être","Massage de Madame",{lieu:"Chania",reserve:true,f:{duree:"1h"}}),
       ev("21:00","","Restaurant","Dîner anniversaire — Astrea Garden",{lieu:"Chania",tel:"+30 690 681 4988",reserve:true,notes:"Signaler l'anniversaire."})
     ]),
-    day("2026-06-21","Elafonisi",[
-      ev("10:45","11:30","Visite","Gorge de Topolia + grotte d'Agia Sofia",{}),
-      ev("12:15","13:15","Restaurant","Déjeuner — secteur Elafonisi",{reserve:false}),
-      ev("13:30","15:30","Nature","Elafonisi — lagon turquoise",{lieu:"Elafonisi"}),
-      ev("16:00","","Trajet","Retour vers Chania",{f:{duree:"~1h30"}}),
-      ev("21:00","","Restaurant","Dîner — Tokyo Joe",{lieu:"Chania",tel:"+30 2821 600843",reserve:true})
+    day("2026-06-21","Innachorion, Milia & Elafonisi",[
+      ev("10:00","11:00","Trajet","Route Chania → gorge de Topolia",{f:{depart:"Chania",arrivee:"Topolia",duree:"~1h"},notes:"Route panoramique plein sud-ouest."}),
+      ev("11:00","11:40","Visite","Gorge de Topolia + grotte-chapelle d'Agia Sofia",{lieu:"Topolia",notes:"Arrêt court. Chapelle nichée dans la grotte."}),
+      ev("11:40","12:30","Trajet","Route vers Milia",{f:{depart:"Topolia",arrivee:"Milia (Vlatos)",duree:"~40 min"},notes:"On monte vers le hameau."}),
+      ev("12:30","13:00","Visite","Milia — flânerie dans le hameau",{lieu:"Milia, Vlatos",notes:"Hameau de bergers du XVIe restauré, off-grid, châtaigniers, chèvres, chats. National Geographic top 25 éco-lodges. On flâne avant le service."}),
+      ev("13:00","14:30","Restaurant","Déjeuner mémorable — Milia",{lieu:"Milia, Vlatos",tel:"+30 697 317 0580",reserve:true,notes:"Farm-to-table, chef Vasilis Makrakis. Tourte végé herbes/feta, ravioli maison, légumes du jardin — parfait pour Madame. LE moment du jour. Ouvert dès 13h. RÉSERVER."}),
+      ev("14:50","15:25","Visite","Village des châtaigniers — Élos",{lieu:"Élos (Innachorion)",notes:"Sur la route. Platanes, source, ruelles, café grec. Optionnel : on s'arrête si l'envie est là."}),
+      ev("16:00","16:30","Visite","Monastère de Chrysoskalitissa",{lieu:"Chrysoskalitissa",f:{horaires:"7h30-19h30"},notes:"Blanc sur la falaise, ~90 marches, légende de la marche d'or, vue mer de Libye. Tenue couvrante."}),
+      ev("16:45","18:00","Nature","Baignade — 1h max : Elafonisi ou Kedrodasos",{lieu:"Elafonisi / Kedrodasos",notes:"Fin d'aprem : foule du midi repartie, lumière dorée sur le sable rose. Option sauvage : Kedrodasos, 1 km à l'est, forêt de junipers, accès piste + 10-15 min à pied, très peu de monde (ambiance naturiste tolérée)."}),
+      ev("18:00","","Trajet","Retour vers Chania",{f:{depart:"Elafonisi",arrivee:"Chania",duree:"~1h45"}}),
+      ev("21:00","","Restaurant","Dîner — Tokyo Joe",{lieu:"Chania",tel:"+30 2821 600843",reserve:true,notes:"Sushi. Ou une taverne, au choix."})
     ]),
-    day("2026-06-22","Theriso & Omalos",[
-      ev("10:00","11:30","Nature","Gorge + village de Theriso",{lieu:"Theriso"}),
-      ev("12:30","13:45","Restaurant","Déjeuner en montagne",{reserve:false,notes:"Option légumes/poisson pour Madame."}),
-      ev("14:30","16:30","Nature","Plateau d'Omalos + belvédère de Xyloskalo",{lieu:"Omalos"}),
+    day("2026-06-22","Gorge d'Imbros & côte sud (Sfakia)",[
+      ev("08:00","08:15","Autre","Petit-déjeuner",{lieu:"Samaria Hotel, Chania"}),
+      ev("08:15","09:45","Trajet","Route Chania → Komitades",{f:{depart:"Chania",arrivee:"Komitades (bas de la gorge)",duree:"~1h30"},notes:"On part tôt pour la fraîcheur et éviter la foule."}),
+      ev("09:45","10:15","Transport","Taxi Komitades → Imbros",{notes:"Astuce logistique : on gare la voiture en bas à Komitades, taxi pour monter au village d'Imbros (~8 €/pers partagé). La voiture nous attend à l'arrivée, on repart quand on veut."}),
+      ev("10:15","13:00","Nature","Gorge d'Imbros — descente",{lieu:"Gorge d'Imbros",cout:"5 €",f:{duree:"~2h30-3h",denivele:"~600 m de descente, facile",acces:"Imbros 780 m → Komitades, ouverte toute l'année"},notes:"On marche au fond du canyon : aucune exposition, OK vertige. Lit de rivière, galets parfois glissants (bonnes chaussures + bâtons). Clou : la Stenada, parois à 1,6 m et 300 m de haut, + arche de pierre et maisons de bergers."}),
+      ev("13:15","13:30","Trajet","Route Komitades → Hora Sfakion",{f:{duree:"~10 min"}}),
+      ev("13:30","15:30","Restaurant","Déjeuner poisson + baignade — Hora Sfakion",{lieu:"Hora Sfakion",reserve:false,notes:"Port de pêche : poisson frais pour Madame, baignade dans la mer de Libye. Alternative sable peu profond : Frangokastello (château vénitien, ~15 min de plus à l'est)."}),
+      ev("15:30","17:00","Trajet","Retour vers Chania",{f:{depart:"Hora Sfakion",arrivee:"Chania",duree:"~1h30"}}),
       ev("18:00","19:00","Bien-être","Massage de Madame",{lieu:"Chania",reserve:true}),
-      ev("21:00","","Restaurant","Dîner — Pasta Alla Mano",{lieu:"Chania",tel:"+30 2821 088887",reserve:true})
+      ev("21:00","","Restaurant","Dîner — musique crétoise live",{lieu:"Taverne à lyra, vieille ville (ex. Adespoto)",tel:"+30 2821 051582",reserve:true,notes:"Final en beauté : lyra, raki, ambiance."})
     ]),
     day("2026-06-23","Départ",[
       ev("09:00","","Hôtel","Petit-déjeuner & check-out",{lieu:"Samaria Hotel, Chania"}),
