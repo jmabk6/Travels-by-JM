@@ -153,7 +153,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v27";
+const VERSION="v32";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -486,18 +486,22 @@ function seed(){
       ev("16:00","16:30","Visite","Monastère de Chrysoskalitissa",{lieu:"Chrysoskalitissa",f:{horaires:"7h30-19h30"},notes:"Blanc sur la falaise, ~90 marches, légende de la marche d'or, vue mer de Libye. Tenue couvrante."}),
       ev("16:45","18:00","Nature","Baignade — 1h max : Elafonisi ou Kedrodasos",{lieu:"Elafonisi / Kedrodasos",notes:"Fin d'aprem : foule du midi repartie, lumière dorée sur le sable rose. Option sauvage : Kedrodasos, 1 km à l'est, forêt de junipers, accès piste + 10-15 min à pied, très peu de monde (ambiance naturiste tolérée)."}),
       ev("18:00","","Trajet","Retour vers Chania",{f:{depart:"Elafonisi",arrivee:"Chania",duree:"~1h45"}}),
-      ev("21:00","","Restaurant","Dîner — Tokyo Joe",{lieu:"Chania",tel:"+30 2821 600843",reserve:true,notes:"Sushi. Ou une taverne, au choix."})
+      ev("20:00","","Restaurant","Dîner — Oregano's Pizza",{lieu:"Oregano's Pizza, Daratsos (ouest de Chania)",tel:"+30 2821 032240",reserve:false,notes:"Pizza au feu de bois (touche crétoise), pâtes, plats grecs. 4,8★. Sur la route du retour d'Elafonisi, juste avant le centre — on s'arrête en arrivant. Végé/pâtes pour Madame."})
     ]),
     day("2026-06-22","Gorge d'Imbros & côte sud (Sfakia)",[
       ev("08:00","08:15","Autre","Petit-déjeuner",{lieu:"Samaria Hotel, Chania"}),
       ev("08:15","09:45","Trajet","Route Chania → Komitades",{f:{depart:"Chania",arrivee:"Komitades (bas de la gorge)",duree:"~1h30"},notes:"On part tôt pour la fraîcheur et éviter la foule."}),
       ev("09:45","10:15","Transport","Taxi Komitades → Imbros",{notes:"Astuce logistique : on gare la voiture en bas à Komitades, taxi pour monter au village d'Imbros (~8 €/pers partagé). La voiture nous attend à l'arrivée, on repart quand on veut."}),
       ev("10:15","13:00","Nature","Gorge d'Imbros — descente",{lieu:"Gorge d'Imbros",cout:"5 €",f:{duree:"~2h30-3h",denivele:"~600 m de descente, facile",acces:"Imbros 780 m → Komitades, ouverte toute l'année"},notes:"On marche au fond du canyon : aucune exposition, OK vertige. Lit de rivière, galets parfois glissants (bonnes chaussures + bâtons). Clou : la Stenada, parois à 1,6 m et 300 m de haut, + arche de pierre et maisons de bergers."}),
-      ev("13:15","13:30","Trajet","Route Komitades → Hora Sfakion",{f:{duree:"~10 min"}}),
-      ev("13:30","15:30","Restaurant","Déjeuner poisson + baignade — Hora Sfakion",{lieu:"Hora Sfakion",reserve:false,notes:"Port de pêche : poisson frais pour Madame, baignade dans la mer de Libye. Alternative sable peu profond : Frangokastello (château vénitien, ~15 min de plus à l'est)."}),
-      ev("15:30","17:00","Trajet","Retour vers Chania",{f:{depart:"Hora Sfakion",arrivee:"Chania",duree:"~1h30"}}),
-      ev("18:00","19:00","Bien-être","Massage de Madame",{lieu:"Chania",reserve:true}),
-      ev("21:00","","Restaurant","Dîner — musique crétoise live",{lieu:"Taverne à lyra, vieille ville (ex. Adespoto)",tel:"+30 2821 051582",reserve:true,notes:"Final en beauté : lyra, raki, ambiance."})
+      ev("13:10","13:20","Trajet","Route Komitades → Hora Sfakion",{f:{duree:"~10 min"}}),
+      ev("13:20","14:30","Restaurant","Déjeuner poisson — Taverna Obrosgialos",{lieu:"Taverna Obrosgialos, Hora Sfakion",tel:"+30 2825 091013",reserve:false,notes:"Le spécialiste poisson/fruits de mer du port (risotto fruits de mer, moules, poisson du jour grillé) — parfait pour Madame. Alternatives sur le port : Delfini (vue mer, romantique) ou Nikos (familial). À Frangokastello : Taverna Akti."}),
+      ev("14:30","15:45","Nature","Baignade — mer de Libye",{lieu:"Hora Sfakion",notes:"On prend son temps dans l'eau. Plage de galets à Hora Sfakion ; alternative sable peu profond : Frangokastello (château vénitien, ~15 min à l'est)."}),
+      ev("15:45","16:30","Trajet","Route Hora Sfakion → Askifou",{f:{depart:"Hora Sfakion",arrivee:"Plateau d'Askifou",duree:"~45 min"},notes:"Montée par la route en lacets au-dessus de la gorge d'Imbros."}),
+      ev("16:30","17:00","Visite","Plateau d'Askifou — village",{lieu:"Askifou",notes:"Sur la route du retour, zéro détour. Vraie Crète : sfakianopita (galette fromage-miel), plateau cerné de montagnes, petit musée de la guerre."}),
+      ev("17:00","18:00","Trajet","Retour Askifou → Chania",{f:{depart:"Askifou",arrivee:"Chania",duree:"~1h (via Vryses)"}}),
+      ev("18:30","20:30","Bien-être","Massage de Madame — NIRVANA",{lieu:"NIRVANA Massage & beauty spa, Plateia 1866, Chania",tel:"+30 693 734 5991",reserve:true,f:{duree:"2h"},notes:"À ~4 min à pied de l'hôtel. Réservé 18h30-20h30."}),
+      ev("21:00","22:15","Restaurant","Dîner — BaoTao Asian Modern Kitchen",{lieu:"BaoTao, Kissamou 20, Chania",tel:"+30 2821 093334",reserve:true,notes:"Asiatique fusion (sushi, thaï, chinois), change du crétois. 4,6★. À 3-5 min du massage NIRVANA. Madame : sushi/végé/pad thaï. Pour toi SANS PORC : canard laqué, bœuf, poulet aigre-doux, crevettes, sushi (éviter dumplings/bao au porc)."}),
+      ev("22:30","","Activité","Café Kriti — musique crétoise live",{lieu:"Café Kriti (Lyrakia), Kalergon 22, vieux port",notes:"Le vrai final en beauté : lyra & laouto, raki, ambiance locale. Mezze seulement (on a déjà dîné). La musique démarre vers 22h30. ~10 min à pied depuis BaoTao."})
     ]),
     day("2026-06-23","Départ",[
       ev("09:00","","Hôtel","Petit-déjeuner & check-out",{lieu:"Samaria Hotel, Chania"}),
