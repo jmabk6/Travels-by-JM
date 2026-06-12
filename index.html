@@ -153,7 +153,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v32";
+const VERSION="v35";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -451,6 +451,7 @@ function seed(){
       ev("20:00","","Restaurant","Dîner — Archontiko",{lieu:"Archontiko, Agios Nikolaos",tel:"+30 694 057 7606",reserve:true})
     ]),
     day("2026-06-18","Poterie & gorge de Richtis",[
+      ev("09:00","09:45","Autre","Petit-déjeuner",{lieu:"Enorme Infinity, Elounda"}),
       ev("11:00","12:30","Activité","Atelier de poterie — Cretan Spiral",{lieu:"près d'Agios Nikolaos",tel:"+30 697 999 7617",reserve:true,f:{prestataire:"Cretan Spiral"}}),
       ev("12:45","13:45","Restaurant","Déjeuner — Agios Nikolaos / Istron",{reserve:false,notes:"Sur la route vers Richtis."}),
       ev("13:45","14:40","Trajet","Route vers la gorge de Richtis",{f:{depart:"Agios Nikolaos",arrivee:"Gorge de Richtis",duree:"~55 min"}}),
@@ -459,24 +460,30 @@ function seed(){
       ev("20:30","","Restaurant","Dîner — Bluesea Sushi",{lieu:"Bluesea Seafood & Sushi, Elounda",tel:"+30 697 980 6313",reserve:true})
     ]),
     day("2026-06-19","Knossos → Chania",[
+      ev("07:15","07:45","Autre","Petit-déjeuner",{lieu:"Enorme Infinity, Elounda",notes:"Rapide avant le départ tôt."}),
       ev("08:00","","Trajet","Départ tôt vers Knossos",{f:{depart:"Elounda",arrivee:"Knossos",duree:"~1h"}}),
       ev("09:30","12:00","Visite","Knossos — visite 3D tablette (FR)",{lieu:"Knossos",reserve:true,notes:"Coupe-file. Tôt pour éviter chaleur et foule."}),
-      ev("12:15","13:30","Restaurant","Déjeuner pâtes — Via Pastarella",{lieu:"Via Pastarella, Héraklion (centre)",tel:"+30 281 028 0505",reserve:true,f:{cuisine:"Pâtes fraîches / italien"}}),
-      ev("13:30","14:15","Visite","Centre historique d'Héraklion",{lieu:"Héraklion",notes:"Fontaine Morosini (place aux Lions), Loggia, forteresse de Koules (extérieur)."}),
-      ev("14:15","16:15","Trajet","Route Héraklion → Chania",{f:{depart:"Héraklion",arrivee:"Chania",duree:"~2h15"}}),
+      ev("12:00","13:15","Trajet","Route Knossos → Réthymnon",{f:{depart:"Knossos",arrivee:"Réthymnon",duree:"~1h15"},notes:"On coupe la route par Réthymnon, à mi-chemin Héraklion-Chania."}),
+      ev("13:30","14:30","Restaurant","Déjeuner — Zefyros (port vénitien)",{lieu:"Zefyros, Nearchou 41, port vénitien, Réthymnon",tel:"+30 2831 028206",reserve:true,notes:"Poisson/fruits de mer frais sur le vieux port (4,7★). Réservé créneau souple ~13h30. Crétoise + mer pour Madame. Éviter les pièges du quai type Remezzo."}),
+      ev("14:30","15:15","Visite","Vieille ville de Réthymnon",{lieu:"Réthymnon, vieille ville",notes:"Ville vivante vénitienne-ottomane : port vénitien et phare égyptien, forteresse Fortezza (extérieur), fontaine Rimondi, minarets, ruelles. De l'Histoire avec un grand H, pas des vitrines."}),
+      ev("15:15","16:15","Trajet","Route Réthymnon → Chania",{f:{depart:"Réthymnon",arrivee:"Chania",duree:"~1h"}}),
       ev("16:15","","Hôtel","Arrivée Samaria Hotel — piscine & repos",{lieu:"Samaria Hotel, Chania",f:{checkin:"16:15"},notes:"On souffle avant la soirée."}),
       ev("18:00","21:30","Activité","Cours de cuisine crétoise (dîner inclus)",{lieu:"Hands on Cretan Cooking — Philippa & Kosta, Kounoupidiana",tel:"+30 697 471 9225",reserve:true,notes:"On cueille au jardin, on cuisine, on dîne ensemble ce qu'on a préparé. Adapté végé/poisson pour Madame, sans porc."})
     ]),
     day("2026-06-20","Anniversaire · Akrotiri & vieille ville",[
+      ev("08:00","08:45","Autre","Petit-déjeuner",{lieu:"Samaria Hotel, Chania"}),
       ev("09:00","10:00","Visite","Monastère d'Agia Triada (Akrotiri)",{lieu:"Agia Triada, Akrotiri",cout:"3 €",notes:"Au frais le matin. Tenue couvrante."}),
-      ev("10:15","11:00","Visite","Monastère de Gouverneto",{lieu:"Gouverneto, Akrotiri",f:{horaires:"Le matin jusqu'à 12h (fermé 12h-17h)"},notes:"Tenue couvrante."}),
-      ev("11:00","11:45","Nature","Grotte de l'Ours (Arkoudiotissa)",{lieu:"Akrotiri",notes:"Courte marche depuis Gouverneto, sentier rocheux. À ton rythme."}),
-      ev("12:30","13:45","Restaurant","Déjeuner — Chania",{lieu:"Chania",reserve:false}),
-      ev("14:30","17:30","Visite","Vieille ville de Chania",{lieu:"Chania",notes:"Halles, Splantzia, port, céramistes — superbe à l'heure dorée."}),
+      ev("10:10","10:20","Trajet","Route Agia Triada → Gouverneto (départ du sentier)",{f:{duree:"~10 min"}}),
+      ev("10:20","13:00","Nature","Rando Katholiko — par Gouverneto & grotte de l'Ours",{lieu:"Sentier de Gouverneto, Akrotiri",cout:"~2,50 € (espèces)",f:{duree:"~2h30 aller-retour",denivele:"~200 m de descente puis remontée",acces:"Départ AVANT midi (on traverse l'enceinte de Gouverneto, fermée 12h-17h)"},notes:"On ne visite plus Gouverneto ni la grotte séparément : on les traverse en descendant vers les ruines de Katholiko (monastère abandonné dans la gorge + grand pont de pierre). Aucun vertige (on reste dans le ravin). Tenue couverte pour passer l'enceinte. Remontée raide et chaude : eau 1,5 L, chapeau, vraies chaussures."}),
+      ev("13:00","13:20","Trajet","Route → Marathi",{f:{depart:"Gouverneto",arrivee:"Marathi",duree:"~15-20 min"}}),
+      ev("13:30","15:00","Restaurant","Déjeuner mer — Marathi",{lieu:"Marathi, Akrotiri",reserve:false,notes:"Petite crique sableuse, eau calme, tavernes à poisson — repos bien mérité après la remontée, et poisson pour Madame."}),
+      ev("15:00","15:20","Trajet","Route Marathi → Chania",{f:{duree:"~20 min"}}),
+      ev("15:30","18:00","Visite","Vieille ville de Chania — port, Evraiki, Splantzia",{lieu:"Chania, vieille ville",notes:"Lecture en couches : port vénitien et phare, quartier juif (Evraiki) + synagogue Etz Hayyim, quartier ottoman de Splantzia, ruelles des tanneurs. Superbe à l'heure dorée. Optionnel sur la descente vers la ville : belvédère Koukouvaya / Tombeaux Venizelos."}),
       ev("18:30","19:30","Bien-être","Massage de Madame",{lieu:"Chania",reserve:true,f:{duree:"1h"}}),
       ev("21:00","","Restaurant","Dîner anniversaire — Astrea Garden",{lieu:"Chania",tel:"+30 690 681 4988",reserve:true,notes:"Signaler l'anniversaire."})
     ]),
     day("2026-06-21","Innachorion, Milia & Elafonisi",[
+      ev("08:45","09:30","Autre","Petit-déjeuner",{lieu:"Samaria Hotel, Chania"}),
       ev("10:00","11:00","Trajet","Route Chania → gorge de Topolia",{f:{depart:"Chania",arrivee:"Topolia",duree:"~1h"},notes:"Route panoramique plein sud-ouest."}),
       ev("11:00","11:40","Visite","Gorge de Topolia + grotte-chapelle d'Agia Sofia",{lieu:"Topolia",notes:"Arrêt court. Chapelle nichée dans la grotte."}),
       ev("11:40","12:30","Trajet","Route vers Milia",{f:{depart:"Topolia",arrivee:"Milia (Vlatos)",duree:"~40 min"},notes:"On monte vers le hameau."}),
