@@ -153,7 +153,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v35";
+const VERSION="v38";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -433,34 +433,36 @@ function seed(){
         f:{compagnie:"Transavia",num:"TO 3456",ref:"XYZ123",sieges:"12A · 12B",terminal:"Orly 4",bagages:"1 soute + 1 cabine"},
         liens:[{label:"Carte d'embarquement",url:""},{label:"Mail de réservation",url:""}],notes:"Arriver 2h avant."}),
       ev("18:30","","Voiture","Prise de la voiture de location",{lieu:"Aéroport d'Héraklion",reserve:true,f:{loueur:"",ref:""}}),
-      ev("19:00","20:00","Trajet","Aéroport → Hôtel Enorme Infinity",{lieu:"Enorme Infinity, Elounda",f:{depart:"Aéroport d'Héraklion",arrivee:"Elounda",duree:"~1h"}}),
+      ev("19:00","20:00","Trajet","Aéroport → Hôtel Elounda Infinity Exclusive Resort & Spa",{lieu:"Elounda Infinity Exclusive Resort & Spa, Elounda",f:{depart:"Aéroport d'Héraklion",arrivee:"Elounda",duree:"~1h"}}),
       ev("21:00","","Restaurant","Dîner — Ariadne (pizzeria)",{lieu:"Ariadne Restaurant & Pizzeria, Elounda",tel:"+30 2841 041849",reserve:false,f:{cuisine:"Pizza au feu de bois / italien"}}),
       ev("22:30","","Autre","Promenade digestive sur le front de mer",{lieu:"Elounda, front de mer"})
     ]),
     day("2026-06-17","Spinalonga, Kritsa & Agios Nikolaos",[
-      ev("09:00","09:30","Autre","Petit-déjeuner",{lieu:"Enorme Infinity, Elounda"}),
-      ev("09:30","09:45","Trajet","Trajet hôtel → Plaka",{f:{depart:"Enorme Infinity, Elounda",arrivee:"Plaka",duree:"~15 min"}}),
+      ev("09:00","09:30","Autre","Petit-déjeuner",{lieu:"Elounda Infinity Exclusive Resort & Spa, Elounda"}),
+      ev("09:30","09:45","Trajet","Trajet hôtel → Plaka",{f:{depart:"Elounda Infinity Exclusive Resort & Spa, Elounda",arrivee:"Plaka",duree:"~15 min"}}),
       ev("10:00","10:15","Transport","Bateau Plaka → Spinalonga",{f:{depart:"Plaka",arrivee:"Spinalonga"}}),
       ev("10:15","11:55","Visite","Visite de Spinalonga",{lieu:"Spinalonga",notes:"Audioguide recommandé. Forteresse vénitienne + ancienne léproserie."}),
       ev("12:00","12:15","Transport","Bateau Spinalonga → Plaka",{f:{depart:"Spinalonga",arrivee:"Plaka"}}),
       ev("12:25","13:35","Restaurant","Déjeuner — PORTA Resto Bar",{lieu:"PORTA Resto Bar, Plaka",tel:"+30 2841 041110",reserve:false,f:{cuisine:"Crétoise, vue Spinalonga"}}),
+      ev("13:35","14:20","Trajet","Route Plaka → Kritsa",{f:{depart:"Plaka",arrivee:"Kritsa",duree:"~45 min"}}),
       ev("14:20","14:50","Visite","Panagia Kera — fresques byzantines",{lieu:"Panagia Kera, Kritsa",cout:"2 €",f:{horaires:"Ferme à 15h"}}),
-      ev("14:55","15:30","Visite","Village de Kritsa",{lieu:"Kritsa",notes:"Ruelles, café grec / loukoumades."}),
-      ev("15:30","16:10","Activité","Tissage — Erginousa's loom",{lieu:"Erginousa's loom, Kritsa",tel:"+30 694 725 0026",notes:"Atelier de tisserande au village : métier à tisser, objets faits main, rencontre."}),
-      ev("16:30","19:30","Visite","Agios Nikolaos — lac, port, marina, apéritif",{lieu:"Agios Nikolaos"}),
-      ev("20:00","","Restaurant","Dîner — Archontiko",{lieu:"Archontiko, Agios Nikolaos",tel:"+30 694 057 7606",reserve:true})
+      ev("14:55","15:25","Visite","Village de Kritsa",{lieu:"Kritsa",notes:"Ruelles, café grec / loukoumades."}),
+      ev("15:25","16:00","Trajet","Route Kritsa → hôtel",{f:{depart:"Kritsa",arrivee:"Elounda Infinity Exclusive Resort & Spa",duree:"~35 min"}}),
+      ev("16:00","18:00","Bien-être","Massage de Madame",{lieu:"Spa, Elounda Infinity Exclusive Resort & Spa",reserve:true,f:{duree:"2h"},notes:"Dernier créneau (le spa ferme à 18h)."}),
+      ev("18:00","18:20","Trajet","Route hôtel → Agios Nikolaos",{f:{depart:"Elounda Infinity Exclusive Resort & Spa",arrivee:"Agios Nikolaos",duree:"~20 min"}}),
+      ev("18:20","20:45","Visite","Agios Nikolaos — lac, port, marina, apéritif doré",{lieu:"Agios Nikolaos",notes:"Lac Voulismeni, port, marina. Apéritif au coucher du soleil (~20h40)."}),
+      ev("21:00","","Restaurant","Dîner — Archontiko",{lieu:"Archontiko, Agios Nikolaos",tel:"+30 694 057 7606",reserve:true})
     ]),
     day("2026-06-18","Poterie & gorge de Richtis",[
-      ev("09:00","09:45","Autre","Petit-déjeuner",{lieu:"Enorme Infinity, Elounda"}),
+      ev("09:00","09:45","Autre","Petit-déjeuner",{lieu:"Elounda Infinity Exclusive Resort & Spa, Elounda"}),
       ev("11:00","12:30","Activité","Atelier de poterie — Cretan Spiral",{lieu:"près d'Agios Nikolaos",tel:"+30 697 999 7617",reserve:true,f:{prestataire:"Cretan Spiral"}}),
       ev("12:45","13:45","Restaurant","Déjeuner — Agios Nikolaos / Istron",{reserve:false,notes:"Sur la route vers Richtis."}),
       ev("13:45","14:40","Trajet","Route vers la gorge de Richtis",{f:{depart:"Agios Nikolaos",arrivee:"Gorge de Richtis",duree:"~55 min"}}),
       ev("14:40","17:10","Nature","Gorge de Richtis — cascade & plage",{lieu:"Gorge de Richtis (Exo Mouliana)",cout:"5 €",f:{duree:"~2h30",denivele:"Moyen, rochers parfois glissants",acces:"Parking en haut (pont) ou en bas (plage)"},notes:"Descente ombragée, cascade (baignade), plage au bout. Bonnes chaussures, eau, maillot."}),
-      ev("18:30","19:30","Bien-être","Massage de Madame",{lieu:"Spa Enorme Infinity",reserve:true,f:{duree:"1h"}}),
       ev("20:30","","Restaurant","Dîner — Bluesea Sushi",{lieu:"Bluesea Seafood & Sushi, Elounda",tel:"+30 697 980 6313",reserve:true})
     ]),
     day("2026-06-19","Knossos → Chania",[
-      ev("07:15","07:45","Autre","Petit-déjeuner",{lieu:"Enorme Infinity, Elounda",notes:"Rapide avant le départ tôt."}),
+      ev("07:15","07:45","Autre","Petit-déjeuner",{lieu:"Elounda Infinity Exclusive Resort & Spa, Elounda",notes:"Rapide avant le départ tôt."}),
       ev("08:00","","Trajet","Départ tôt vers Knossos",{f:{depart:"Elounda",arrivee:"Knossos",duree:"~1h"}}),
       ev("09:30","12:00","Visite","Knossos — visite 3D tablette (FR)",{lieu:"Knossos",reserve:true,notes:"Coupe-file. Tôt pour éviter chaleur et foule."}),
       ev("12:00","13:15","Trajet","Route Knossos → Réthymnon",{f:{depart:"Knossos",arrivee:"Réthymnon",duree:"~1h15"},notes:"On coupe la route par Réthymnon, à mi-chemin Héraklion-Chania."}),
