@@ -153,7 +153,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v45";
+const VERSION="v46";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -271,7 +271,7 @@ function renderDetail(){
   const nm=etName(e),addr=etAddr(e),tel=etTel(e);
   const q=encodeURIComponent(addr||(nm!=="(sans nom)"?nm:""));
   const rows=[];
-  (e.champs||[]).forEach(c=>{const lc=(c.label||"").trim().toLowerCase();if(c.value&&lc!=="nom"){const v=TEL_L.includes(lc)?`<a href="tel:${esc(c.value).replace(/\s/g,'')}">${esc(c.value)}</a>`:esc(c.value);rows.push(`<div class="row"><span class="k">${esc(c.label||"—")}</span><span class="v">${v}</span></div>`);}});
+  (e.champs||[]).forEach(c=>{const lc=(c.label||"").trim().toLowerCase();if(c.value&&lc!=="nom"){const v=TEL_L.includes(lc)?`<a href="tel:${esc(c.value).replace(/\s/g,'')}">${esc(c.value)}</a>`:ADDR_L.includes(lc)?`<a href="${mapUrl(c.value)}" target="_blank" rel="noopener">${esc(c.value)} ↗</a>`:esc(c.value);rows.push(`<div class="row"><span class="k">${esc(c.label||"—")}</span><span class="v">${v}</span></div>`);}});
   if(e.cout)rows.push(`<div class="row cost"><span class="k">Coût</span><span class="v">${esc(e.cout)}</span></div>`);
   const reservePill=e.reserve===true?'<span class="pill ok">Réservé</span>':e.reserve===false?'<span class="pill no">À réserver</span>':"";
   const acts=[];
