@@ -153,7 +153,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v54";
+const VERSION="v55";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -461,10 +461,9 @@ function seed(){
       ev("11:00","12:30","Activité","Atelier de poterie — Cretan Spiral",{lieu:"près d'Agios Nikolaos",tel:"+30 697 999 7617",reserve:true,f:{prestataire:"Cretan Spiral"}}),
       ev("12:30","13:15","Trajet","Route poterie → Mochlos",{f:{depart:"Agios Nikolaos",arrivee:"Mochlos",duree:"~40 min"}}),
       ev("13:15","14:45","Restaurant","Déjeuner — To Bogazi (port de Mochlos)",{reserve:"na",lieu:"Taverna To Bogazi @35.1848,25.9049",tel:"+30 2843 094200",notes:"Au bout de la petite presqu'île, les pieds dans l'eau ; poisson frais pour Madame. C'est eux qui assurent la navette bateau vers l'îlot minoen en face. Prévoir des espèces. Alternative (5,0★, plus créatif/végé) : Sochoro."}),
-      ev("14:45","15:45","Visite","Balade à Mochlos",{lieu:"Mochlos",notes:"Petit port de pêcheurs, barques, café en terrasse. Îlot minoen juste en face (navette bateau possible). Authentique, sans foule."}),
-      ev("15:45","16:45","Trajet","Route Mochlos → hôtel",{f:{depart:"Mochlos",arrivee:"Elounda Infinity Exclusive Resort & Spa",duree:"~1h"}}),
-      ev("17:00","18:00","Bien-être","Massage de Madame",{lieu:"Spa, Elounda Infinity Exclusive Resort & Spa",reserve:false,f:{duree:"1h"},notes:"Le spa ferme à 18h."}),
-      ev("18:00","","Hôtel","Piscine & repos",{lieu:"Elounda Infinity Exclusive Resort & Spa",notes:"On souffle au resort avant le dîner."}),
+      ev("14:45","17:00","Visite","Mochlos — îlot minoen, baignade & flânerie",{lieu:"Mochlos, Crete",notes:"On traverse vers l'îlot minoen juste en face (navette bateau depuis la taverne To Bogazi, ou courte nage), ruines minoennes à explorer, baignade, café en terrasse au petit port. Authentique, sans foule — prévoir le maillot."}),
+      ev("17:00","18:00","Trajet","Route Mochlos → hôtel",{f:{depart:"Mochlos",arrivee:"Elounda Infinity Exclusive Resort & Spa",duree:"~1h"}}),
+      ev("18:00","20:00","Hôtel","Piscine & repos",{lieu:"Elounda Infinity Exclusive Resort & Spa",notes:"On souffle au resort avant le dîner."}),
       ev("20:30","","Restaurant","Dîner — Bluesea Sushi",{lieu:"Bluesea Seafood & Sushi, Elounda",tel:"+30 697 980 6313",reserve:false})
     ]),
     day("2026-06-19","Knossos → Chania",[
