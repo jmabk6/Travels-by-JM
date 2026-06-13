@@ -153,7 +153,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v47";
+const VERSION="v49";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -273,7 +273,7 @@ function renderDetail(){
   const rows=[];
   (e.champs||[]).forEach(c=>{const lc=(c.label||"").trim().toLowerCase();if(c.value&&lc!=="nom"){const v=TEL_L.includes(lc)?`<a href="tel:${esc(c.value).replace(/\s/g,'')}">${esc(c.value)}</a>`:ADDR_L.includes(lc)?`<a href="${mapUrl(c.value)}" target="_blank" rel="noopener">${esc(c.value)} ↗</a>`:esc(c.value);rows.push(`<div class="row"><span class="k">${esc(c.label||"—")}</span><span class="v">${v}</span></div>`);}});
   if(e.cout)rows.push(`<div class="row cost"><span class="k">Coût</span><span class="v">${esc(e.cout)}</span></div>`);
-  const reservePill=e.reserve===true?'<span class="pill ok">Réservé</span>':e.reserve===false?'<span class="pill no">À réserver</span>':"";
+  const reservePill=e.reserve===true?'<span class="pill ok">Réservé</span>':e.reserve===false?'<span class="pill no">À réserver</span>':e.reserve==='na'?'<span class="pill" style="background:#E9E6DD;color:#6B5E50">Non réservable</span>':"";
   const acts=[];
   (e.actions||[]).forEach((a,ai)=>{
     if(a.type==="lien"&&(a.label||a.url))acts.push(`<a class="act" ${a.url?`href="${esc(a.url)}" target="_blank" rel="noopener"`:""}><span class="ic">🔗</span><span>${esc(a.label||a.url||"Lien")}</span><span class="go">›</span></a>`);
@@ -334,7 +334,7 @@ function addEvent(jid){const first=trip().jours[0];
   EDIT_CTX={jid:jid||(first?first.id:null),eid:null,origJid:null};renderEditor();}
 function captureEditor(){
   EDIT.debut=val("f_debut");EDIT.fin=val("f_fin");EDIT.groupe=$("f_groupe").value;EDIT.cout=val("f_cout");EDIT.titre=val("f_titre");
-  const rs=$("f_reserve").value;EDIT.reserve=rs===""?null:rs==="1";
+  const rs=$("f_reserve").value;EDIT.reserve=rs===""?null:rs==="na"?"na":rs==="1";
   EDIT.champs=(EDIT.champs||[]).map((c,i)=>({label:$("cl_"+i)?$("cl_"+i).value.trim():c.label,value:$("cv_"+i)?$("cv_"+i).value.trim():c.value}));
   EDIT.actions=(EDIT.actions||[]).map((a,i)=>{
     const label=$("al_"+i)?$("al_"+i).value.trim():(a.label||"");
@@ -377,7 +377,7 @@ function renderEditor(){
     <div class="field"><label>Groupe</label><select id="f_groupe" onchange="onGroupChange()">${GROUP_NAMES.map(g=>`<option ${g===e.groupe?"selected":""}>${g}</option>`).join("")}</select></div>
     <div class="field"><label>Infos (champs libres — adresse, téléphone…)</label>${champsRows}<button class="btn ghost sm" onclick="addChamp()">+ Ajouter un champ</button></div>
     <div class="field r2"><div><label>Coût</label><input id="f_cout" value="${esc(e.cout)}" placeholder="ex. 320 €"></div>
-      <div><label>Réservé</label><select id="f_reserve"><option value="">—</option><option value="1" ${e.reserve===true?"selected":""}>Oui</option><option value="0" ${e.reserve===false?"selected":""}>Non</option></select></div></div>
+      <div><label>Réservation</label><select id="f_reserve"><option value="">—</option><option value="1" ${e.reserve===true?"selected":""}>Réservé</option><option value="0" ${e.reserve===false?"selected":""}>À réserver</option><option value="na" ${e.reserve==='na'?"selected":""}>Non réservable</option></select></div></div>
     <div class="field"><label>Actions</label>${actRows}
       <div class="actadd"><button onclick="addAction('lien')">🔗 Lien</button><button onclick="addAction('adresse')">📍 Plans</button><button onclick="addAction('itineraire')">🧭 Itinéraire</button><button onclick="addAction('fichier')">📄 Fichier</button><button onclick="addAction('photo')">🖼 Photo</button><button onclick="addAction('audio')">🔊 Audio</button></div></div>
     <div class="field"><label>Notes</label><textarea id="f_notes" style="min-height:80px">${esc(e.notes)}</textarea></div>
@@ -436,7 +436,7 @@ function seed(){
         liens:[{label:"Carte d'embarquement",url:""},{label:"Mail de réservation",url:""}],notes:"Arriver 2h avant."}),
       ev("18:30","","Voiture","Prise de la voiture de location",{lieu:"Aéroport d'Héraklion",reserve:true,f:{loueur:"",ref:""}}),
       ev("19:00","20:00","Trajet","Aéroport → Hôtel Elounda Infinity Exclusive Resort & Spa",{lieu:"Elounda Infinity Exclusive Resort & Spa, Elounda",f:{depart:"Aéroport d'Héraklion",arrivee:"Elounda",duree:"~1h"}}),
-      ev("21:00","","Restaurant","Dîner — Ariadne (pizzeria)",{lieu:"Ariadne Restaurant & Pizzeria, Elounda",tel:"+30 2841 041849",reserve:false,f:{cuisine:"Pizza au feu de bois / italien"}}),
+      ev("21:00","","Restaurant","Dîner — Ariadne (pizzeria)",{reserve:"na",lieu:"Ariadne Restaurant & Pizzeria, Elounda",tel:"+30 2841 041849",f:{cuisine:"Pizza au feu de bois / italien"}}),
       ev("22:30","","Autre","Promenade digestive sur le front de mer",{lieu:"Elounda, front de mer"})
     ]),
     day("2026-06-17","Spinalonga, Kritsa & Agios Nikolaos",[
@@ -445,39 +445,39 @@ function seed(){
       ev("10:00","10:15","Transport","Bateau Plaka → Spinalonga",{f:{depart:"Plaka",arrivee:"Spinalonga"}}),
       ev("10:15","11:55","Visite","Visite de Spinalonga",{lieu:"Spinalonga",notes:"Audioguide recommandé. Forteresse vénitienne + ancienne léproserie."}),
       ev("12:00","12:15","Transport","Bateau Spinalonga → Plaka",{f:{depart:"Spinalonga",arrivee:"Plaka"}}),
-      ev("12:25","13:35","Restaurant","Déjeuner — PORTA Resto Bar",{lieu:"PORTA Resto Bar, Plaka",tel:"+30 2841 041110",reserve:false,f:{cuisine:"Crétoise, vue Spinalonga"}}),
+      ev("12:25","13:35","Restaurant","Déjeuner — PORTA Resto Bar",{reserve:"na",lieu:"PORTA Resto Bar, Plaka",tel:"+30 2841 041110",f:{cuisine:"Crétoise, vue Spinalonga"}}),
       ev("13:35","14:20","Trajet","Route Plaka → Kritsa",{f:{depart:"Plaka",arrivee:"Kritsa",duree:"~45 min"}}),
       ev("14:20","14:50","Visite","Panagia Kera — fresques byzantines",{lieu:"Panagia Kera, Kritsa",cout:"2 €",f:{horaires:"Ferme à 15h"}}),
       ev("14:55","15:25","Visite","Village de Kritsa",{lieu:"Kritsa",notes:"Ruelles, café grec / loukoumades."}),
       ev("15:25","16:00","Trajet","Route Kritsa → hôtel",{f:{depart:"Kritsa",arrivee:"Elounda Infinity Exclusive Resort & Spa",duree:"~35 min"}}),
       ev("16:00","17:00","Hôtel","Piscine & repos",{lieu:"Elounda Infinity Exclusive Resort & Spa",notes:"On souffle avant le massage."}),
-      ev("17:00","18:00","Bien-être","Massage de Madame",{lieu:"Spa, Elounda Infinity Exclusive Resort & Spa",reserve:true,f:{duree:"1h"},notes:"Le spa ferme à 18h."}),
+      ev("17:00","18:00","Bien-être","Massage de Madame",{lieu:"Spa, Elounda Infinity Exclusive Resort & Spa",reserve:false,f:{duree:"1h"},notes:"Le spa ferme à 18h."}),
       ev("18:00","18:20","Trajet","Route hôtel → Agios Nikolaos",{f:{depart:"Elounda Infinity Exclusive Resort & Spa",arrivee:"Agios Nikolaos",duree:"~20 min"}}),
       ev("18:20","20:45","Visite","Agios Nikolaos — lac, port, marina, apéritif doré",{lieu:"Agios Nikolaos",notes:"Lac Voulismeni, port, marina. Apéritif au coucher du soleil (~20h40)."}),
-      ev("21:00","","Restaurant","Dîner — Archontiko",{lieu:"Archontiko, Agios Nikolaos",tel:"+30 694 057 7606",reserve:true})
+      ev("21:00","","Restaurant","Dîner — Archontiko",{lieu:"Archontiko, Agios Nikolaos",tel:"+30 694 057 7606",reserve:false})
     ]),
     day("2026-06-18","Poterie & Mochlos",[
       ev("09:00","09:45","Autre","Petit-déjeuner",{lieu:"Elounda Infinity Exclusive Resort & Spa, Elounda"}),
       ev("11:00","12:30","Activité","Atelier de poterie — Cretan Spiral",{lieu:"près d'Agios Nikolaos",tel:"+30 697 999 7617",reserve:true,f:{prestataire:"Cretan Spiral"}}),
       ev("12:30","13:15","Trajet","Route poterie → Mochlos",{f:{depart:"Agios Nikolaos",arrivee:"Mochlos",duree:"~40 min"}}),
-      ev("13:15","14:45","Restaurant","Déjeuner — To Bogazi (port de Mochlos)",{lieu:"Taverna To Bogazi, Mochlos",tel:"+30 2843 094200",reserve:false,notes:"Au bout de la petite presqu'île, les pieds dans l'eau ; poisson frais pour Madame. C'est eux qui assurent la navette bateau vers l'îlot minoen en face. Prévoir des espèces. Alternative (5,0★, plus créatif/végé) : Sochoro."}),
+      ev("13:15","14:45","Restaurant","Déjeuner — To Bogazi (port de Mochlos)",{reserve:"na",lieu:"Taverna To Bogazi, Mochlos",tel:"+30 2843 094200",notes:"Au bout de la petite presqu'île, les pieds dans l'eau ; poisson frais pour Madame. C'est eux qui assurent la navette bateau vers l'îlot minoen en face. Prévoir des espèces. Alternative (5,0★, plus créatif/végé) : Sochoro."}),
       ev("14:45","15:45","Visite","Balade à Mochlos",{lieu:"Mochlos",notes:"Petit port de pêcheurs, barques, café en terrasse. Îlot minoen juste en face (navette bateau possible). Authentique, sans foule."}),
       ev("15:45","16:45","Trajet","Route Mochlos → hôtel",{f:{depart:"Mochlos",arrivee:"Elounda Infinity Exclusive Resort & Spa",duree:"~1h"}}),
-      ev("17:00","18:00","Bien-être","Massage de Madame",{lieu:"Spa, Elounda Infinity Exclusive Resort & Spa",reserve:true,f:{duree:"1h"},notes:"Le spa ferme à 18h."}),
+      ev("17:00","18:00","Bien-être","Massage de Madame",{lieu:"Spa, Elounda Infinity Exclusive Resort & Spa",reserve:false,f:{duree:"1h"},notes:"Le spa ferme à 18h."}),
       ev("18:00","","Hôtel","Piscine & repos",{lieu:"Elounda Infinity Exclusive Resort & Spa",notes:"On souffle au resort avant le dîner."}),
-      ev("20:30","","Restaurant","Dîner — Bluesea Sushi",{lieu:"Bluesea Seafood & Sushi, Elounda",tel:"+30 697 980 6313",reserve:true})
+      ev("20:30","","Restaurant","Dîner — Bluesea Sushi",{lieu:"Bluesea Seafood & Sushi, Elounda",tel:"+30 697 980 6313",reserve:false})
     ]),
     day("2026-06-19","Knossos → Chania",[
       ev("07:15","07:45","Autre","Petit-déjeuner",{lieu:"Elounda Infinity Exclusive Resort & Spa, Elounda",notes:"Rapide avant le départ tôt."}),
       ev("08:00","","Trajet","Départ tôt vers Knossos",{f:{depart:"Elounda",arrivee:"Knossos",duree:"~1h"}}),
-      ev("09:30","12:00","Visite","Knossos — visite 3D tablette (FR)",{lieu:"Knossos",reserve:true,notes:"Coupe-file. Tôt pour éviter chaleur et foule."}),
+      ev("09:30","12:00","Visite","Knossos — visite 3D tablette (FR)",{lieu:"Knossos",reserve:false,notes:"Coupe-file. Tôt pour éviter chaleur et foule."}),
       ev("12:00","13:15","Trajet","Route Knossos → Réthymnon",{f:{depart:"Knossos",arrivee:"Réthymnon",duree:"~1h15"},notes:"On coupe la route par Réthymnon, à mi-chemin Héraklion-Chania."}),
-      ev("13:30","14:30","Restaurant","Déjeuner — Zefyros (port vénitien)",{lieu:"Zefyros, Nearchou 41, port vénitien, Réthymnon",tel:"+30 2831 028206",reserve:true,notes:"Poisson/fruits de mer frais sur le vieux port (4,7★). Réservé créneau souple ~13h30. Crétoise + mer pour Madame. Éviter les pièges du quai type Remezzo."}),
+      ev("13:30","14:30","Restaurant","Déjeuner — Zefyros (port vénitien)",{lieu:"Zefyros, Nearchou 41, port vénitien, Réthymnon",tel:"+30 2831 028206",reserve:false,notes:"Poisson/fruits de mer frais sur le vieux port (4,7★). Réservé créneau souple ~13h30. Crétoise + mer pour Madame. Éviter les pièges du quai type Remezzo."}),
       ev("14:30","16:00","Visite","Vieille ville de Réthymnon",{lieu:"Réthymnon, vieille ville",notes:"~1h30 pour vraiment la sentir : port vénitien et phare égyptien, forteresse Fortezza (extérieur), fontaine Rimondi, minarets, dédale ottoman. De l'Histoire avec un grand H, pas des vitrines."}),
       ev("16:00","17:00","Trajet","Route Réthymnon → Chania",{f:{depart:"Réthymnon",arrivee:"Chania",duree:"~1h"}}),
       ev("17:00","19:00","Hôtel","Arrivée Samaria Hotel — piscine & repos",{lieu:"Samaria Hotel, Chania",f:{checkin:"17:00"},notes:"On souffle après la grosse journée (Knossos + Réthymnon + route)."}),
       ev("19:00","20:00","Visite","Port vénitien au couchant",{lieu:"Chania, port vénitien",notes:"Avant-goût : flânerie sur le front de mer et le phare à l'heure dorée, jusqu'au dîner. La vraie vieille ville (Evraiki, Splantzia, ruelles) c'est demain après-midi."}),
-      ev("20:00","","Restaurant","Dîner — Palazzo al Mare (sur le port)",{lieu:"Palazzo al Mare, Sourmelis 36-38, port vénitien, Chania",tel:"+30 2821 008813",reserve:true,notes:"Cuisine soignée sur le port, vue phare + coucher de soleil (4,7★). Réserver une table en bord d'eau (~20h). Pour Madame (poisson + végé, ni viande ni crustacés/mollusques) : poisson du jour, fava/tarama, courgettes, salades, légumes. Sans porc."})
+      ev("20:00","","Restaurant","Dîner — Palazzo al Mare (sur le port)",{lieu:"Palazzo al Mare, Sourmelis 36-38, port vénitien, Chania",tel:"+30 2821 008813",reserve:false,notes:"Cuisine soignée sur le port, vue phare + coucher de soleil (4,7★). Réserver une table en bord d'eau (~20h). Pour Madame (poisson + végé, ni viande ni crustacés/mollusques) : poisson du jour, fava/tarama, courgettes, salades, légumes. Sans porc."})
     ]),
     day("2026-06-20","Anniversaire · Akrotiri & vieille ville",[
       ev("08:00","08:45","Autre","Petit-déjeuner",{lieu:"Samaria Hotel, Chania"}),
@@ -485,11 +485,11 @@ function seed(){
       ev("10:10","10:20","Trajet","Route Agia Triada → Gouverneto (départ du sentier)",{f:{duree:"~10 min"}}),
       ev("10:20","13:00","Nature","Rando Katholiko — par Gouverneto & grotte de l'Ours",{lieu:"Sentier de Gouverneto, Akrotiri",cout:"~2,50 € (espèces)",f:{duree:"~2h30 aller-retour",denivele:"~200 m de descente puis remontée",acces:"Départ AVANT midi (on traverse l'enceinte de Gouverneto, fermée 12h-17h)"},notes:"On ne visite plus Gouverneto ni la grotte séparément : on les traverse en descendant vers les ruines de Katholiko (monastère abandonné dans la gorge + grand pont de pierre). Aucun vertige (on reste dans le ravin). Tenue couverte pour passer l'enceinte. Remontée raide et chaude : eau 1,5 L, chapeau, vraies chaussures."}),
       ev("13:00","13:20","Trajet","Route → Marathi",{f:{depart:"Gouverneto",arrivee:"Marathi",duree:"~15-20 min"}}),
-      ev("13:30","15:00","Restaurant","Déjeuner mer — Patrelantonis (Marathi)",{lieu:"Patrelantonis, plage de Marathi, Akrotiri",tel:"+30 2821 063337",reserve:false,notes:"Tables au bord de l'eau, poisson frais, raki + dessert offerts (4,6★). Repos mérité après Katholiko. Pour Madame : fleurs de courgette farcies (réputées), salade crétoise, dakos, poisson du jour — pas de mollusques. Poisson vendu au poids : demander le prix de la pièce. Alternatives : Loukoulos, Veranda."}),
+      ev("13:30","15:00","Restaurant","Déjeuner mer — Patrelantonis (Marathi)",{reserve:"na",lieu:"Patrelantonis, plage de Marathi, Akrotiri",tel:"+30 2821 063337",notes:"Tables au bord de l'eau, poisson frais, raki + dessert offerts (4,6★). Repos mérité après Katholiko. Pour Madame : fleurs de courgette farcies (réputées), salade crétoise, dakos, poisson du jour — pas de mollusques. Poisson vendu au poids : demander le prix de la pièce. Alternatives : Loukoulos, Veranda."}),
       ev("15:00","15:20","Trajet","Route Marathi → Chania",{f:{duree:"~20 min"}}),
       ev("15:30","18:00","Visite","Vieille ville — Evraiki, Splantzia & ruelles",{lieu:"Chania, vieille ville",notes:"L'exploration en profondeur (le port, c'était hier soir) : quartier juif Evraiki + synagogue Etz Hayyim, quartier ottoman de Splantzia, ruelles des tanneurs, marché couvert. Superbe à l'heure dorée. Optionnel sur la descente vers la ville : belvédère Koukouvaya / Tombeaux Venizelos."}),
-      ev("18:30","19:30","Bien-être","Massage de Madame",{lieu:"Chania",reserve:true,f:{duree:"1h"}}),
-      ev("21:00","","Restaurant","Dîner anniversaire — Astrea Garden",{lieu:"Chania",tel:"+30 690 681 4988",reserve:true,notes:"Signaler l'anniversaire."})
+      ev("18:30","19:30","Bien-être","Massage de Madame",{lieu:"Chania",reserve:false,f:{duree:"1h"}}),
+      ev("21:00","","Restaurant","Dîner anniversaire — Astrea Garden",{lieu:"Chania",tel:"+30 690 681 4988",reserve:false,notes:"Signaler l'anniversaire."})
     ]),
     day("2026-06-21","Innachorion, Milia & Elafonisi",[
       ev("08:45","09:30","Autre","Petit-déjeuner",{lieu:"Samaria Hotel, Chania"}),
@@ -497,12 +497,12 @@ function seed(){
       ev("11:00","11:40","Visite","Gorge de Topolia + grotte-chapelle d'Agia Sofia",{lieu:"Topolia",notes:"Arrêt court. Chapelle nichée dans la grotte."}),
       ev("11:40","12:30","Trajet","Route vers Milia",{f:{depart:"Topolia",arrivee:"Milia (Vlatos)",duree:"~40 min"},notes:"On monte vers le hameau."}),
       ev("12:30","13:00","Visite","Milia — flânerie dans le hameau",{lieu:"Milia, Vlatos",notes:"Hameau de bergers du XVIe restauré, off-grid, châtaigniers, chèvres, chats. National Geographic top 25 éco-lodges. On flâne avant le service."}),
-      ev("13:00","14:30","Restaurant","Déjeuner mémorable — Milia",{lieu:"Milia, Vlatos",tel:"+30 697 317 0580",reserve:true,notes:"Farm-to-table, chef Vasilis Makrakis. Tourte végé herbes/feta, ravioli maison, légumes du jardin — parfait pour Madame. LE moment du jour. Ouvert dès 13h. RÉSERVER."}),
+      ev("13:00","14:30","Restaurant","Déjeuner mémorable — Milia",{lieu:"Milia, Vlatos",tel:"+30 697 317 0580",reserve:false,notes:"Farm-to-table, chef Vasilis Makrakis. Tourte végé herbes/feta, ravioli maison, légumes du jardin — parfait pour Madame. LE moment du jour. Ouvert dès 13h. RÉSERVER."}),
       ev("14:50","15:25","Visite","Village des châtaigniers — Élos",{lieu:"Élos (Innachorion)",notes:"Sur la route. Platanes, source, ruelles, café grec. Optionnel : on s'arrête si l'envie est là."}),
       ev("16:00","16:30","Visite","Monastère de Chrysoskalitissa",{lieu:"Chrysoskalitissa",f:{horaires:"7h30-19h30"},notes:"Blanc sur la falaise, ~90 marches, légende de la marche d'or, vue mer de Libye. Tenue couvrante."}),
       ev("16:45","18:00","Nature","Baignade — 1h max : Elafonisi ou Kedrodasos",{lieu:"Elafonisi / Kedrodasos",notes:"Fin d'aprem : foule du midi repartie, lumière dorée sur le sable rose. Option sauvage : Kedrodasos, 1 km à l'est, forêt de junipers, accès piste + 10-15 min à pied, très peu de monde (ambiance naturiste tolérée)."}),
       ev("18:00","","Trajet","Retour vers Chania",{f:{depart:"Elafonisi",arrivee:"Chania",duree:"~1h45"}}),
-      ev("20:00","","Restaurant","Dîner — Oregano's Pizza",{lieu:"Oregano's Pizza, Daratsos (ouest de Chania)",tel:"+30 2821 032240",reserve:false,notes:"Pizza au feu de bois (touche crétoise), pâtes, plats grecs. 4,8★. Sur la route du retour d'Elafonisi, juste avant le centre — on s'arrête en arrivant. Végé/pâtes pour Madame."})
+      ev("20:00","","Restaurant","Dîner — Oregano's Pizza",{reserve:"na",lieu:"Oregano's Pizza, Daratsos (ouest de Chania)",tel:"+30 2821 032240",notes:"Pizza au feu de bois (touche crétoise), pâtes, plats grecs. 4,8★. Sur la route du retour d'Elafonisi, juste avant le centre — on s'arrête en arrivant. Végé/pâtes pour Madame."})
     ]),
     day("2026-06-22","Gorge d'Imbros & côte sud (Sfakia)",[
       ev("08:00","08:15","Autre","Petit-déjeuner",{lieu:"Samaria Hotel, Chania"}),
@@ -510,13 +510,13 @@ function seed(){
       ev("09:45","10:15","Transport","Taxi Komitades → Imbros",{notes:"Astuce logistique : on gare la voiture en bas à Komitades, taxi pour monter au village d'Imbros (~8 €/pers partagé). La voiture nous attend à l'arrivée, on repart quand on veut."}),
       ev("10:15","13:00","Nature","Gorge d'Imbros — descente",{lieu:"Gorge d'Imbros",cout:"5 €",f:{duree:"~2h30-3h",denivele:"~600 m de descente, facile",acces:"Imbros 780 m → Komitades, ouverte toute l'année"},notes:"On marche au fond du canyon : aucune exposition, OK vertige. Lit de rivière, galets parfois glissants (bonnes chaussures + bâtons). Clou : la Stenada, parois à 1,6 m et 300 m de haut, + arche de pierre et maisons de bergers."}),
       ev("13:10","13:20","Trajet","Route Komitades → Hora Sfakion",{f:{duree:"~10 min"}}),
-      ev("13:20","14:30","Restaurant","Déjeuner poisson — Taverna Obrosgialos",{lieu:"Taverna Obrosgialos, Hora Sfakion",tel:"+30 2825 091013",reserve:false,notes:"Le spécialiste poisson/fruits de mer du port (risotto fruits de mer, moules, poisson du jour grillé) — parfait pour Madame. Alternatives sur le port : Delfini (vue mer, romantique) ou Nikos (familial). À Frangokastello : Taverna Akti."}),
+      ev("13:20","14:30","Restaurant","Déjeuner poisson — Taverna Obrosgialos",{reserve:"na",lieu:"Taverna Obrosgialos, Hora Sfakion",tel:"+30 2825 091013",notes:"Le spécialiste poisson/fruits de mer du port (risotto fruits de mer, moules, poisson du jour grillé) — parfait pour Madame. Alternatives sur le port : Delfini (vue mer, romantique) ou Nikos (familial). À Frangokastello : Taverna Akti."}),
       ev("14:30","15:45","Nature","Baignade — mer de Libye",{lieu:"Hora Sfakion",notes:"On prend son temps dans l'eau. Plage de galets à Hora Sfakion ; alternative sable peu profond : Frangokastello (château vénitien, ~15 min à l'est)."}),
       ev("15:45","16:30","Trajet","Route Hora Sfakion → Askifou",{f:{depart:"Hora Sfakion",arrivee:"Plateau d'Askifou",duree:"~45 min"},notes:"Montée par la route en lacets au-dessus de la gorge d'Imbros."}),
       ev("16:30","17:00","Visite","Plateau d'Askifou — village",{lieu:"Askifou",notes:"Sur la route du retour, zéro détour. Vraie Crète : sfakianopita (galette fromage-miel), plateau cerné de montagnes, petit musée de la guerre."}),
       ev("17:00","18:00","Trajet","Retour Askifou → Chania",{f:{depart:"Askifou",arrivee:"Chania",duree:"~1h (via Vryses)"}}),
-      ev("18:30","20:30","Bien-être","Massage de Madame — NIRVANA",{lieu:"NIRVANA Massage & beauty spa, Plateia 1866, Chania",tel:"+30 693 734 5991",reserve:true,f:{duree:"2h"},notes:"À ~4 min à pied de l'hôtel. Réservé 18h30-20h30."}),
-      ev("21:00","22:15","Restaurant","Dîner — BaoTao Asian Modern Kitchen",{lieu:"BaoTao, Kissamou 20, Chania",tel:"+30 2821 093334",reserve:true,notes:"Asiatique fusion (sushi, thaï, chinois), change du crétois. 4,6★. À 3-5 min du massage NIRVANA. Madame : sushi/végé/pad thaï. Pour toi SANS PORC : canard laqué, bœuf, poulet aigre-doux, crevettes, sushi (éviter dumplings/bao au porc)."}),
+      ev("18:30","20:30","Bien-être","Massage de Madame — NIRVANA",{lieu:"NIRVANA Massage & beauty spa, Plateia 1866, Chania",tel:"+30 693 734 5991",reserve:false,f:{duree:"2h"},notes:"À ~4 min à pied de l'hôtel. Réservé 18h30-20h30."}),
+      ev("21:00","22:15","Restaurant","Dîner — BaoTao Asian Modern Kitchen",{lieu:"BaoTao, Kissamou 20, Chania",tel:"+30 2821 093334",reserve:false,notes:"Asiatique fusion (sushi, thaï, chinois), change du crétois. 4,6★. À 3-5 min du massage NIRVANA. Madame : sushi/végé/pad thaï. Pour toi SANS PORC : canard laqué, bœuf, poulet aigre-doux, crevettes, sushi (éviter dumplings/bao au porc)."}),
       ev("22:30","","Activité","Café Kriti — musique crétoise live",{lieu:"Café Kriti (Lyrakia), Kalergon 22, vieux port",notes:"Le vrai final en beauté : lyra & laouto, raki, ambiance locale. Mezze seulement (on a déjà dîné). La musique démarre vers 22h30. ~10 min à pied depuis BaoTao."})
     ]),
     day("2026-06-23","Départ",[
