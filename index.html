@@ -153,7 +153,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v38";
+const VERSION="v39";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -453,12 +453,14 @@ function seed(){
       ev("18:20","20:45","Visite","Agios Nikolaos — lac, port, marina, apéritif doré",{lieu:"Agios Nikolaos",notes:"Lac Voulismeni, port, marina. Apéritif au coucher du soleil (~20h40)."}),
       ev("21:00","","Restaurant","Dîner — Archontiko",{lieu:"Archontiko, Agios Nikolaos",tel:"+30 694 057 7606",reserve:true})
     ]),
-    day("2026-06-18","Poterie & gorge de Richtis",[
+    day("2026-06-18","Poterie & Mochlos",[
       ev("09:00","09:45","Autre","Petit-déjeuner",{lieu:"Elounda Infinity Exclusive Resort & Spa, Elounda"}),
       ev("11:00","12:30","Activité","Atelier de poterie — Cretan Spiral",{lieu:"près d'Agios Nikolaos",tel:"+30 697 999 7617",reserve:true,f:{prestataire:"Cretan Spiral"}}),
-      ev("12:45","13:45","Restaurant","Déjeuner — Agios Nikolaos / Istron",{reserve:false,notes:"Sur la route vers Richtis."}),
-      ev("13:45","14:40","Trajet","Route vers la gorge de Richtis",{f:{depart:"Agios Nikolaos",arrivee:"Gorge de Richtis",duree:"~55 min"}}),
-      ev("14:40","17:10","Nature","Gorge de Richtis — cascade & plage",{lieu:"Gorge de Richtis (Exo Mouliana)",cout:"5 €",f:{duree:"~2h30",denivele:"Moyen, rochers parfois glissants",acces:"Parking en haut (pont) ou en bas (plage)"},notes:"Descente ombragée, cascade (baignade), plage au bout. Bonnes chaussures, eau, maillot."}),
+      ev("12:30","13:15","Trajet","Route poterie → Mochlos",{f:{depart:"Agios Nikolaos",arrivee:"Mochlos",duree:"~40 min"}}),
+      ev("13:15","14:45","Restaurant","Déjeuner — To Bogazi (port de Mochlos)",{lieu:"Taverna To Bogazi, Mochlos",tel:"+30 2843 094200",reserve:false,notes:"Au bout de la petite presqu'île, les pieds dans l'eau ; poisson frais pour Madame. C'est eux qui assurent la navette bateau vers l'îlot minoen en face. Prévoir des espèces. Alternative (5,0★, plus créatif/végé) : Sochoro."}),
+      ev("14:45","16:00","Visite","Balade à Mochlos",{lieu:"Mochlos",notes:"Petit port de pêcheurs, barques, café en terrasse. Îlot minoen juste en face (navette bateau possible). Authentique, sans foule."}),
+      ev("16:00","17:00","Trajet","Route Mochlos → hôtel",{f:{depart:"Mochlos",arrivee:"Elounda Infinity Exclusive Resort & Spa",duree:"~1h"}}),
+      ev("17:00","","Hôtel","Piscine & repos",{lieu:"Elounda Infinity Exclusive Resort & Spa",notes:"On souffle au resort avant le dîner."}),
       ev("20:30","","Restaurant","Dîner — Bluesea Sushi",{lieu:"Bluesea Seafood & Sushi, Elounda",tel:"+30 697 980 6313",reserve:true})
     ]),
     day("2026-06-19","Knossos → Chania",[
