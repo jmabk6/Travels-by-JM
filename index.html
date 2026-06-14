@@ -200,7 +200,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v76";
+const VERSION="v77";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -523,12 +523,23 @@ function closeImg(){$("imgView").classList.remove("on");$("imgView").innerHTML="
 function openAtt(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.data)return;try{const url=URL.createObjectURL(dataUrlToBlob(a.data));window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(err){const w=window.open();if(w)w.location=a.data;}}
 function back(){stopSpeak();view=prevView||"aujourdhui";cur=null;render();requestAnimationFrame(function(){window.scrollTo(0,itinScroll||0);});}
 function stopSpeak(){try{if('speechSynthesis' in window)speechSynthesis.cancel();}catch(e){}SPK=null;}
+function pickFrVoice(){
+  const vs=(speechSynthesis.getVoices()||[]).filter(v=>/^fr/i.test(v.lang||""));
+  if(!vs.length)return null;
+  const score=v=>{const n=(v.name||"").toLowerCase();let s=0;
+    if(/fr[-_]?fr/i.test(v.lang||""))s+=2;
+    if(/(amélior|amelior|enhanced|premium|neural|siri|eloquence|infovox)/.test(n))s+=6;
+    if(/(thomas|aurélie|aurelie|audrey|marie|virginie|nicolas|jacques)/.test(n))s+=2;
+    if(/compact/.test(n))s-=4;
+    return s;};
+  return vs.slice().sort((a,b)=>score(b)-score(a))[0];
+}
 function speakAction(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.texte)return;
   if(!('speechSynthesis' in window)){alert("La lecture audio n'est pas disponible sur cet appareil.");return;}
   if(SPK&&SPK.jid===jid&&SPK.eid===eid&&SPK.ai===ai){stopSpeak();render();return;}
   stopSpeak();SPK={jid:jid,eid:eid,ai:ai};
   const chunks=a.texte.replace(/\s+/g,' ').trim().match(/[^.!?…]+[.!?…]*/g)||[a.texte];
-  const voices=speechSynthesis.getVoices();const fr=voices.find(v=>/fr[-_]?FR/i.test(v.lang))||voices.find(v=>/^fr/i.test(v.lang));
+  const fr=pickFrVoice();
   chunks.forEach((c,idx)=>{const u=new SpeechSynthesisUtterance(c.trim());u.lang="fr-FR";u.rate=DATA.audioRate||0.85;if(fr)u.voice=fr;if(idx===chunks.length-1)u.onend=()=>{if(SPK&&SPK.jid===jid&&SPK.eid===eid&&SPK.ai===ai){SPK=null;render();}};speechSynthesis.speak(u);});
   render();}
 function setRate(r){DATA.audioRate=r;stopSpeak();save();render();}
