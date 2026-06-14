@@ -200,7 +200,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v79";
+const VERSION="v80";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -522,13 +522,13 @@ function daySummary(j){
 let RECMR=null,RECCHUNKS=[],RECSTREAM=null,RECBLOB=null,RECURL=null,RECCTX=null,VAUDIO=null;
 function curChapAction(){if(!RECCTX)return null;const j=trip().jours.find(x=>x.id===RECCTX.jid);const e=j&&j.etapes.find(x=>x.id===RECCTX.eid);return e?(e.actions||[])[RECCTX.ai]:null;}
 function openChapitre(jid,eid,ai){RECCTX={jid:jid,eid:eid,ai:ai};if(RECURL){try{URL.revokeObjectURL(RECURL);}catch(e){}RECURL=null;}RECBLOB=null;renderChapitre();}
+function chapTextHTML(a){return `<div style="font-size:15px;line-height:1.6;white-space:pre-wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;max-height:44vh;overflow:auto">${esc((a&&a.texte)||"(pas de texte)")}</div>`;}
 function renderChapitre(){
   const a=curChapAction();if(!a){closeSheet();return;}
-  const txt=`<div style="font-size:15px;line-height:1.6;white-space:pre-wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;max-height:46vh;overflow:auto">${esc(a.texte||"(pas de texte)")}</div>`;
   const ctrl=a.recId
     ? `<button class="btn primary" onclick="playChap()">▶︎ Écouter ma voix</button><button class="btn ghost" onclick="startRec()">↺ Refaire l’enregistrement</button>`
     : `<button class="btn primary" onclick="startRec()">🎙️ Enregistrer ma voix</button>`;
-  openSheet(`<h2>${esc(a.label||"Chapitre")}</h2>${txt}${ctrl}`);
+  openSheet(`<h2>${esc(a.label||"Chapitre")}</h2>${chapTextHTML(a)}${ctrl}`);
 }
 async function startRec(){
   try{
@@ -540,8 +540,8 @@ async function startRec(){
     RECMR.start();renderRecording();
   }catch(e){openSheet(`<h2>Micro indisponible</h2><div style="font-size:14px;color:var(--coral);white-space:pre-wrap;line-height:1.5;margin-bottom:14px">${esc(((e&&e.message)||e)+"")}\n\nSur iPhone : autorise le micro (Réglages → Safari → Microphone), puis réessaie.</div><button class="btn ghost" onclick="renderChapitre()">← Retour</button>`);}
 }
-function renderRecording(){const a=curChapAction();openSheet(`<h2>${esc((a&&a.label)||"Chapitre")}</h2><div style="text-align:center;font-size:16px;color:var(--coral);font-weight:700;margin:20px 0">● Enregistrement en cours…</div><button class="btn del" onclick="stopRec()">⏹ Arrêter</button>`);}
-function renderRecPreview(){const a=curChapAction();openSheet(`<h2>${esc((a&&a.label)||"Chapitre")}</h2><audio controls src="${RECURL}" style="width:100%;margin:8px 0 14px"></audio><button class="btn primary" onclick="saveRec()">💾 Garder</button><button class="btn ghost" onclick="startRec()">↺ Refaire</button><button class="btn ghost" onclick="renderChapitre()">Annuler</button>`);}
+function renderRecording(){const a=curChapAction();openSheet(`<h2>${esc((a&&a.label)||"Chapitre")}</h2><div style="text-align:center;font-size:14.5px;color:var(--coral);font-weight:700;margin:2px 0 12px">● Enregistrement… lis le texte 👇</div>${chapTextHTML(a)}<button class="btn del" onclick="stopRec()">⏹ Arrêter</button>`);}
+function renderRecPreview(){const a=curChapAction();openSheet(`<h2>${esc((a&&a.label)||"Chapitre")}</h2>${chapTextHTML(a)}<audio controls src="${RECURL}" style="width:100%;margin:4px 0 14px"></audio><button class="btn primary" onclick="saveRec()">💾 Garder</button><button class="btn ghost" onclick="startRec()">↺ Refaire</button><button class="btn ghost" onclick="renderChapitre()">Annuler</button>`);}
 function stopRec(){try{if(RECMR&&RECMR.state!=="inactive")RECMR.stop();}catch(e){}}
 function stopStream(){try{if(RECSTREAM)RECSTREAM.getTracks().forEach(t=>t.stop());}catch(e){}RECSTREAM=null;}
 async function saveRec(){
