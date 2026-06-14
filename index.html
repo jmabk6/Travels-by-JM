@@ -213,7 +213,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v86";
+const VERSION="v87";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -329,6 +329,7 @@ function render(){
   if(view==="detail")return renderDetail();
   if(view==="aujourdhui")return renderToday();
   if(view==="resas")return renderResas();
+  if(view==="photos")return renderPhotos();
   if(view==="infos")return renderInfos();
   renderItin();
 }
@@ -404,8 +405,7 @@ function renderDetail(){
       ${rows.length?`<div class="sec-lbl">Infos</div><div class="card">${rows.join("")}</div>`:""}
       ${acts.length?`<div class="sec-lbl">Actions</div>${acts.join("")}`:""}
       ${e.notes?`<div class="sec-lbl">Notes</div><div class="notes-box">${esc(e.notes)}</div>`:""}
-      <div class="sec-lbl">Photos</div>
-      <div class="gallery">${(e.photos||[]).map(id=>`<div class="ph-thumb"><img data-pid="${id}" onclick="viewPhoto('${id}')"><button class="ph-del" onclick="event.stopPropagation();delPhoto('${j.id}','${e.id}','${id}')">×</button></div>`).join("")}<button class="ph-add" onclick="addPhotos('${j.id}','${e.id}')">+<span>photo</span></button></div>
+      ${macroOf(e.groupe)!=='trajet'?`<div class="sec-lbl">Photos</div><div class="gallery">${(e.photos||[]).map(id=>`<div class="ph-thumb"><img data-pid="${id}" onclick="viewPhoto('${id}')"><button class="ph-del" onclick="event.stopPropagation();delPhoto('${j.id}','${e.id}','${id}')">×</button></div>`).join("")}<button class="ph-add" onclick="addPhotos('${j.id}','${e.id}')">+<span>photo</span></button></div>`:""}
       <div class="sec-lbl">Mon avis</div>
       <div class="avis-card">
         <div class="stars">${[1,2,3,4,5].map(i=>`<span class="star ${i<=(e.note||0)?'on':''}" onclick="rateEvent(${i})">★</span>`).join("")}</div>
@@ -436,7 +436,7 @@ function tabBar(active){
   const t=trip();let nb=0;
   (t.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>{if(e.reserve===false)nb++;}));
   const tb=(v,ic,lbl,badge)=>`<button class="tab ${active===v?'on':''}" onclick="go('${v}')"><span class="ti">${ic}</span><span>${lbl}${badge?` <span class="badge" style="background:var(--coral)">${badge}</span>`:""}</span></button>`;
-  return `<div class="tabbar">${tb('aujourdhui','📅',"Auj.",0)}${tb('itin','🗺️','Itinéraire',0)}${tb('resas','🎟️','Résas',nb)}${tb('infos','ℹ️','Infos',0)}</div>`;
+  return `<div class="tabbar">${tb('aujourdhui','📅',"Auj.",0)}${tb('itin','🗺️','Itin.',0)}${tb('photos','📷','Photos',0)}${tb('resas','🎟️','Résas',nb)}${tb('infos','ℹ️','Infos',0)}</div>`;
 }
 function go(v){if(view!=="detail")prevView=view;view=v;cur=null;render();window.scrollTo(0,0);}
 function topGeneric(titre){return `<div class="top"><button class="back" onclick="backToVoyages()">‹ Voyages</button><h1>${esc(titre)}</h1><button class="add" style="background:var(--card);color:var(--sea);border:1px solid var(--line);font-size:20px" onclick="openVoyageMenu()">⋯</button></div>`;}
@@ -687,6 +687,20 @@ function importVoyage(){
     }catch(e){alert("Import impossible : "+((e&&e.message)||e));}
   };
   inp.click();
+}
+
+/* ============ V87 : galerie photos du voyage ============ */
+function renderPhotos(){
+  const t=trip();const jours=[...(t.jours||[])].sort((a,b)=>(a.date||"")<(b.date||"")?-1:1);
+  let total=0,html="";
+  jours.forEach(j=>{
+    const items=[];(j.etapes||[]).forEach(e=>(e.photos||[]).forEach(id=>items.push({id:id,eid:e.id})));
+    if(!items.length)return;total+=items.length;
+    html+=`<div class="sec-lbl">${esc(dShort(j.date))} · ${esc(j.titre)}</div><div class="gallery">${items.map(it=>`<div class="ph-thumb"><img data-pid="${it.id}" onclick="viewPhoto('${it.id}')"><button class="ph-del" onclick="event.stopPropagation();delPhoto('${j.id}','${it.eid}','${it.id}')">×</button></div>`).join("")}</div>`;
+  });
+  if(!total)html='<div class="empty">Aucune photo pour l’instant.<br>Ajoute des photos depuis une étape (visite, resto, plage…).</div>';
+  $("app").innerHTML=topGeneric("Photos du voyage")+`<div class="wrap">${html}</div>`+tabBar('photos');
+  loadThumbs();
 }
 
 /* ---- nav ---- */
