@@ -191,6 +191,12 @@ a{color:inherit;text-decoration:none}
 .fr-seg+.fr-seg{border-left:1px solid rgba(255,255,255,.55)}
 .fr-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
 .fr-leg{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ph-thumb{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--line-2)}
+.ph-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ph-del{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:15px;line-height:22px;text-align:center;padding:0}
+.ph-add{aspect-ratio:1;border-radius:10px;border:1.5px dashed var(--line);background:#fff;color:var(--sea);font-size:24px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.ph-add span{font-size:10px;font-weight:700}
 </style>
 </head>
 <body>
@@ -200,7 +206,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v81";
+const VERSION="v82";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -275,6 +281,7 @@ function getKV(k){return new Promise(r=>{if(useMem)return r(MEM[k]);const t=DB.t
 function putKV(k,v){return new Promise(r=>{if(useMem){MEM[k]=v;return r();}const t=DB.transaction("kv","readwrite").objectStore("kv").put(v,k);t.onsuccess=()=>r();t.onerror=()=>r();});}
 function putRec(id,blob){return new Promise(r=>{if(useMem){MEM["rec_"+id]=blob;return r();}try{const t=DB.transaction("rec","readwrite").objectStore("rec").put(blob,id);t.onsuccess=()=>r();t.onerror=()=>r();}catch(e){r();}});}
 function getRec(id){return new Promise(r=>{if(useMem)return r(MEM["rec_"+id]);try{const t=DB.transaction("rec","readonly").objectStore("rec").get(id);t.onsuccess=()=>r(t.result);t.onerror=()=>r(undefined);}catch(e){r(undefined);}});}
+function delRec(id){return new Promise(r=>{if(useMem){delete MEM["rec_"+id];return r();}try{const t=DB.transaction("rec","readwrite").objectStore("rec").delete(id);t.onsuccess=()=>r();t.onerror=()=>r();}catch(e){r();}});}
 
 let DATA=null,view="aujourdhui",prevView="aujourdhui",cur=null,SPK=null,itinScroll=0;
 async function save(){await putKV("data",DATA);}
@@ -383,6 +390,8 @@ function renderDetail(){
       ${rows.length?`<div class="sec-lbl">Infos</div><div class="card">${rows.join("")}</div>`:""}
       ${acts.length?`<div class="sec-lbl">Actions</div>${acts.join("")}`:""}
       ${e.notes?`<div class="sec-lbl">Notes</div><div class="notes-box">${esc(e.notes)}</div>`:""}
+      <div class="sec-lbl">Photos</div>
+      <div class="gallery">${(e.photos||[]).map(id=>`<div class="ph-thumb"><img data-pid="${id}" onclick="viewPhoto('${id}')"><button class="ph-del" onclick="event.stopPropagation();delPhoto('${j.id}','${e.id}','${id}')">×</button></div>`).join("")}<button class="ph-add" onclick="addPhotos('${j.id}','${e.id}')">+<span>photo</span></button></div>
       <div class="sec-lbl">Mon avis</div>
       <div class="avis-card">
         <div class="stars">${[1,2,3,4,5].map(i=>`<span class="star ${i<=(e.note||0)?'on':''}" onclick="rateEvent(${i})">★</span>`).join("")}</div>
@@ -392,6 +401,7 @@ function renderDetail(){
       <button class="btn primary" onclick="editEvent('${j.id}','${e.id}')">Modifier l'étape</button>
       <button class="btn del" onclick="delEvent('${j.id}','${e.id}')">Supprimer l'étape</button>
     </div>`;
+  loadThumbs();
 }
 
 /* ============ V59 : vues Aujourd'hui / Réservations / Infos ============ */
@@ -558,6 +568,27 @@ async function playRec(recId){
   const url=URL.createObjectURL(blob);VAUDIO=new Audio(url);VAUDIO.onended=()=>{try{URL.revokeObjectURL(url);}catch(e){}VAUDIO=null;};VAUDIO.play();
 }
 
+/* ============ V82 : photos du voyage (souvenirs) ============ */
+let PHOTOURL={};
+function addPhotos(jid,eid){
+  const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.multiple=true;
+  inp.onchange=async()=>{
+    const files=Array.from(inp.files||[]);if(!files.length)return;
+    const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);e.photos=e.photos||[];
+    for(let k=0;k<files.length;k++){try{const du=await readImage(files[k],1600,0.82);const blob=dataUrlToBlob(du);const id=uid();await putRec(id,blob);e.photos.push(id);}catch(err){}}
+    await save();render();
+  };
+  inp.click();
+}
+async function loadThumbs(){
+  const imgs=document.querySelectorAll("img[data-pid]:not([src])");
+  for(let k=0;k<imgs.length;k++){const im=imgs[k];const id=im.getAttribute("data-pid");
+    if(PHOTOURL[id]){im.src=PHOTOURL[id];continue;}
+    const b=await getRec(id);if(b){const u=URL.createObjectURL(b);PHOTOURL[id]=u;im.src=u;}}
+}
+async function viewPhoto(id){let u=PHOTOURL[id];if(!u){const b=await getRec(id);if(!b)return;u=URL.createObjectURL(b);PHOTOURL[id]=u;}$("imgView").innerHTML=`<img src="${u}" alt="">`;$("imgView").classList.add("on");}
+async function delPhoto(jid,eid,id){if(!confirm("Supprimer cette photo de l'étape ?"))return;const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);e.photos=(e.photos||[]).filter(p=>p!==id);await save();try{if(PHOTOURL[id]){URL.revokeObjectURL(PHOTOURL[id]);delete PHOTOURL[id];}}catch(e){}delRec(id);render();}
+
 /* ---- nav ---- */
 function openDetail(jid,eid){if(view!=="detail")prevView=view;itinScroll=window.scrollY;cur={jid:jid,eid:eid};view="detail";render();window.scrollTo(0,0);}
 function openImg(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.data)return;$("imgView").innerHTML=`<img src="${a.data}" alt="">`;$("imgView").classList.add("on");}
@@ -649,7 +680,7 @@ function renderEditor(){
       <div><label>Réservation</label><select id="f_reserve"><option value="">—</option><option value="1" ${e.reserve===true?"selected":""}>Réservé</option><option value="0" ${e.reserve===false?"selected":""}>À réserver</option><option value="na" ${e.reserve==='na'?"selected":""}>Non réservable</option></select></div></div>
     <div class="field"><label>Actions à ajouter</label>
       <div style="font-size:12px;color:var(--ink-2);margin:-2px 0 9px;line-height:1.45">📍 Maps, 🚗 Itinéraire et 📞 Appeler s'affichent <b>automatiquement</b> dès que l'adresse / le téléphone sont remplis. Ici, ajoute seulement le reste :</div>${actRows}
-      <div class="actadd"><button onclick="addAction('lien')">🔗 Lien</button><button onclick="addAction('fichier')">📄 Fichier</button><button onclick="addAction('photo')">🖼 Photo</button><button onclick="addAction('audio')">📖 Chapitre</button></div></div>
+      <div class="actadd"><button onclick="addAction('lien')">🔗 Lien</button><button onclick="addAction('fichier')">📄 Fichier</button><button onclick="addAction('audio')">📖 Chapitre</button></div></div>
     <div class="field"><label>Notes</label><textarea id="f_notes" style="min-height:80px">${esc(e.notes)}</textarea></div>
     <button class="btn primary" onclick="saveEvent()">Enregistrer</button>
     ${isNew?"":`<button class="btn del" onclick="delEvent('${EDIT_CTX.jid}','${EDIT_CTX.eid}')">Supprimer l'étape</button>`}`);
