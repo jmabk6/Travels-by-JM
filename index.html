@@ -197,6 +197,11 @@ a{color:inherit;text-decoration:none}
 .ph-del{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:15px;line-height:22px;text-align:center;padding:0}
 .ph-add{aspect-ratio:1;border-radius:10px;border:1.5px dashed var(--line);background:#fff;color:var(--sea);font-size:24px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .ph-add span{font-size:10px;font-weight:700}
+.voy-card{position:relative;background:linear-gradient(135deg,var(--sea-deep),var(--sea) 72%,#1A9AA0);color:#fff;border-radius:18px;padding:18px 16px;margin:12px 0;box-shadow:0 8px 20px rgba(11,95,103,.22)}
+.voy-title{font-family:var(--serif);font-size:21px;font-weight:600;line-height:1.15;padding-right:84px}
+.voy-lieu{font-size:13px;font-weight:700;letter-spacing:.04em;color:#F4D9A2;margin-top:3px}
+.voy-meta{font-size:13px;margin-top:10px;opacity:.95}
+.voy-edit{position:absolute;top:12px;right:12px;font-size:12px;font-weight:700;color:#fff;background:rgba(255,255,255,.18);padding:5px 11px;border-radius:999px}
 </style>
 </head>
 <body>
@@ -206,7 +211,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v82";
+const VERSION="v84";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -283,16 +288,16 @@ function putRec(id,blob){return new Promise(r=>{if(useMem){MEM["rec_"+id]=blob;r
 function getRec(id){return new Promise(r=>{if(useMem)return r(MEM["rec_"+id]);try{const t=DB.transaction("rec","readonly").objectStore("rec").get(id);t.onsuccess=()=>r(t.result);t.onerror=()=>r(undefined);}catch(e){r(undefined);}});}
 function delRec(id){return new Promise(r=>{if(useMem){delete MEM["rec_"+id];return r();}try{const t=DB.transaction("rec","readwrite").objectStore("rec").delete(id);t.onsuccess=()=>r();t.onerror=()=>r();}catch(e){r();}});}
 
-let DATA=null,view="aujourdhui",prevView="aujourdhui",cur=null,SPK=null,itinScroll=0;
+let DATA=null,view="voyages",prevView="itin",cur=null,SPK=null,itinScroll=0,CURV=null;
 async function save(){await putKV("data",DATA);}
 async function load(){const s=await getKV("data");
   /* V57 : on ne RÉINITIALISE plus jamais sur changement de version.
      Dès qu'il existe des données valides sur l'appareil, on les garde (la vérité = ton iPhone).
      Le seed ne sert qu'au tout premier lancement, quand rien n'est encore stocké. */
-  if(s&&s.trip&&Array.isArray(s.trip.jours)){DATA=s;DATA.version=VERSION;migrate();}
+  if(s&&(s.voyages||(s.trip&&Array.isArray(s.trip.jours)))){DATA=s;DATA.version=VERSION;migrate();}
   else{DATA=seed();migrate();}
   await save();}
-function migrate(){if(!DATA.infos)DATA.infos=defaultInfos();const t=DATA.trip;if(!t)return;(t.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>{
+function migrateEtape(e){
   if(e.champs===undefined){e.champs=fToChamps(e.groupe,e.f||{});delete e.f;}
   if("nom"in e||"lieu"in e||"tel"in e){
     const has=l=>e.champs.some(c=>(c.label||"").trim().toLowerCase()===l.toLowerCase());
@@ -306,12 +311,19 @@ function migrate(){if(!DATA.infos)DATA.infos=defaultInfos();const t=DATA.trip;if
   (e.actions||[]).forEach(a=>{if(a.type==="plan")a.type="itineraire";});
   if(e.titre===undefined){const ni=(e.champs||[]).findIndex(c=>(c.label||"").trim().toLowerCase()==="nom");if(ni>=0){e.titre=e.champs[ni].value||"";e.champs.splice(ni,1);}else e.titre="";}
   if(e.groupe==="Autre"&&/^\s*(petit[- ]?d[ée]j|brunch|go[uû]ter)/i.test(e.titre||""))e.groupe="Restaurant";
-}));}
-const trip=()=>DATA.trip;
+}
+function migrate(){
+  /* ancien modèle (un seul voyage) -> liste de voyages */
+  if(DATA.trip&&!DATA.voyages){DATA.voyages=[{id:uid(),titre:(DATA.trip.titre||"Voyage"),lieu:"",jours:DATA.trip.jours||[],infos:DATA.infos||defaultInfos()}];delete DATA.trip;delete DATA.infos;}
+  if(!DATA.voyages)DATA.voyages=[];
+  DATA.voyages.forEach(v=>{if(!v.id)v.id=uid();if(!v.infos)v.infos=defaultInfos();(v.jours||[]).forEach(j=>(j.etapes||[]).forEach(migrateEtape));});
+}
+function trip(){return (DATA&&DATA.voyages)?(DATA.voyages.find(v=>v.id===CURV)||null):null;}
 function sortDay(j){if(j&&j.etapes)j.etapes.sort((a,b)=>(a.debut||"99:99").localeCompare(b.debut||"99:99"));}
 
 /* ---- render ---- */
 function render(){
+  if(view==="voyages")return renderVoyages();
   if(view==="detail")return renderDetail();
   if(view==="aujourdhui")return renderToday();
   if(view==="resas")return renderResas();
@@ -336,7 +348,7 @@ function renderItin(){
     </div>`;
   }).join("");
   $("app").innerHTML=`
-    <div class="top"><button class="add" style="background:var(--card);color:var(--sea);border:1px solid var(--line);font-size:20px" onclick="openSettings()">⋯</button><h1>${esc(t.titre)}</h1><button class="add" onclick="editDay()">+</button></div>
+    <div class="top"><button class="back" onclick="backToVoyages()">‹ Voyages</button><h1>${esc(t.titre)}</h1><button class="add" style="background:var(--card);color:var(--sea);border:1px solid var(--line);font-size:20px" onclick="openVoyageMenu()">⋯</button></div>
     <div class="wrap">${t.jours.length?days:'<div class="empty">Aucune journée.</div>'}
       <button class="addday" onclick="editDay()">+ Ajouter une journée</button>
       <div class="ver">Mes Voyages · ${VERSION}</div>
@@ -425,7 +437,7 @@ function tabBar(active){
   return `<div class="tabbar">${tb('aujourdhui','📅',"Auj.",0)}${tb('itin','🗺️','Itinéraire',0)}${tb('resas','🎟️','Résas',nb)}${tb('infos','ℹ️','Infos',0)}</div>`;
 }
 function go(v){if(view!=="detail")prevView=view;view=v;cur=null;render();window.scrollTo(0,0);}
-function topGeneric(titre){return `<div class="top"><button class="add" style="background:var(--card);color:var(--sea);border:1px solid var(--line);font-size:20px" onclick="openSettings()">⋯</button><h1>${esc(titre)}</h1><span class="sp"></span></div>`;}
+function topGeneric(titre){return `<div class="top"><button class="back" onclick="backToVoyages()">‹ Voyages</button><h1>${esc(titre)}</h1><button class="add" style="background:var(--card);color:var(--sea);border:1px solid var(--line);font-size:20px" onclick="openVoyageMenu()">⋯</button></div>`;}
 function backLabel(){return {aujourdhui:"Aujourd'hui",itin:"Itinéraire",resas:"Réservations",infos:"Infos"}[prevView]||"Retour";}
 
 function renderToday(){
@@ -472,7 +484,7 @@ function defaultInfos(){return {
   urgences:[{label:"Urgences (UE)",num:"112"},{label:"Police",num:"100"},{label:"Ambulance",num:"166"},{label:"Pompiers",num:"199"}],
   notes:""};}
 function renderInfos(){
-  const inf=DATA.infos||defaultInfos();const t=trip();
+  const t=trip();const inf=(t&&t.infos)||defaultInfos();
   const pick=gs=>{const out=[],seen={};(t.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>{if(gs.includes(e.groupe)){const k=etAddr(e)||etName(e);if(k&&!seen[k]){seen[k]=1;out.push(e);}}}));return out;};
   const fieldRow=(e,lbls)=>lbls.map(l=>{const v=chVal(e,l);return v?`<div class="info-line"><b>${esc(l)} :</b> ${esc(v)}</div>`:"";}).join("");
   const card=(e,byAddr)=>{const addr=etAddr(e),tel=etTel(e),pa=addr?parseAddr(addr):null;const title=byAddr&&pa?pa.disp:etName(e);
@@ -488,14 +500,14 @@ function renderInfos(){
     <button class="btn ghost" style="margin-top:16px" onclick="editInfos()">Modifier les infos pratiques</button>
   </div>`+tabBar('infos');
 }
-function copyRegime(){copyText((DATA.infos||defaultInfos()).regimeEn);}
-function editInfos(){const inf=DATA.infos||defaultInfos();
+function copyRegime(){copyText(((trip()&&trip().infos)||defaultInfos()).regimeEn);}
+function editInfos(){const inf=(trip()&&trip().infos)||defaultInfos();
   openSheet(`<h2>Infos pratiques</h2>
     <div class="field"><label>Phrase régime (anglais)</label><textarea id="i_en" style="min-height:84px">${esc(inf.regimeEn)}</textarea></div>
     <div class="field"><label>Phrase régime (français)</label><textarea id="i_fr" style="min-height:84px">${esc(inf.regimeFr)}</textarea></div>
     <div class="field"><label>Mes notes (wifi, chambre, divers…)</label><textarea id="i_notes" style="min-height:96px">${esc(inf.notes)}</textarea></div>
     <button class="btn primary" onclick="saveInfos()">Enregistrer</button>`);}
-async function saveInfos(){DATA.infos=DATA.infos||defaultInfos();DATA.infos.regimeEn=val("i_en");DATA.infos.regimeFr=val("i_fr");DATA.infos.notes=$("i_notes").value;await save();closeSheet();render();}
+async function saveInfos(){const v=trip();if(!v)return;v.infos=v.infos||defaultInfos();v.infos.regimeEn=val("i_en");v.infos.regimeFr=val("i_fr");v.infos.notes=$("i_notes").value;await save();closeSheet();render();}
 
 function copyText(str){try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(str).then(()=>toast("Copié ✔"),()=>fallbackCopy(str));}else fallbackCopy(str);}catch(e){fallbackCopy(str);}}
 function fallbackCopy(str){try{const ta=document.createElement("textarea");ta.value=str;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.focus();ta.select();document.execCommand("copy");ta.remove();toast("Copié ✔");}catch(e){alert("Copie impossible.");}}
@@ -588,6 +600,83 @@ async function loadThumbs(){
 }
 async function viewPhoto(id){let u=PHOTOURL[id];if(!u){const b=await getRec(id);if(!b)return;u=URL.createObjectURL(b);PHOTOURL[id]=u;}$("imgView").innerHTML=`<img src="${u}" alt="">`;$("imgView").classList.add("on");}
 async function delPhoto(jid,eid,id){if(!confirm("Supprimer cette photo de l'étape ?"))return;const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);e.photos=(e.photos||[]).filter(p=>p!==id);await save();try{if(PHOTOURL[id]){URL.revokeObjectURL(PHOTOURL[id]);delete PHOTOURL[id];}}catch(e){}delRec(id);render();}
+
+/* ============ V83 : Mes voyages (liste + vignettes) ============ */
+function renderVoyages(){
+  const vs=DATA.voyages||[];
+  const cards=vs.map(v=>{
+    const js=[...(v.jours||[])].sort((a,b)=>(a.date||"")<(b.date||"")?-1:1);
+    const nb=js.length;const d1=nb?js[0].date:"",d2=nb?js[nb-1].date:"";
+    const dates=d1?(d2&&d2!==d1?dShort(d1)+" – "+dShort(d2):dShort(d1)):"";
+    const meta=nb?`${dates} (${nb} jour${nb>1?"s":""})`:"À planifier";
+    return `<div class="voy-card" onclick="openVoyage('${v.id}')">
+      <button class="voy-edit" onclick="event.stopPropagation();editVoyage('${v.id}')">Modifier</button>
+      <div class="voy-title">${esc(v.titre||"Voyage")}</div>
+      ${v.lieu?`<div class="voy-lieu">${esc(v.lieu)}</div>`:""}
+      <div class="voy-meta">${esc(meta)}</div>
+    </div>`;
+  }).join("")||'<div class="empty">Aucun voyage encore.<br>Touche + pour en créer un.</div>';
+  $("app").innerHTML=`
+    <div class="top"><span class="sp"></span><h1>Mes voyages</h1><button class="add" onclick="newVoyage()">+</button></div>
+    <div class="wrap">${cards}
+      <button class="btn ghost" style="margin-top:14px" onclick="importVoyage()">📥 Importer un voyage</button>
+      <div class="ver">Mes Voyages · ${VERSION}</div></div>`;
+}
+function openVoyage(id){CURV=id;cur=null;view="itin";render();window.scrollTo(0,0);}
+function backToVoyages(){stopSpeak();CURV=null;cur=null;view="voyages";render();window.scrollTo(0,0);}
+function newVoyage(){openSheet(`<h2>Nouveau voyage</h2>
+  <div class="field"><label>Nom</label><input id="v_titre" placeholder="ex. Lisbonne — escapade"></div>
+  <div class="field"><label>Lieu / destination</label><input id="v_lieu" placeholder="ex. Portugal"></div>
+  <button class="btn primary" onclick="saveNewVoyage()">Créer le voyage</button>`);}
+async function saveNewVoyage(){const id=uid();DATA.voyages=DATA.voyages||[];DATA.voyages.push({id:id,titre:val("v_titre")||"Nouveau voyage",lieu:val("v_lieu"),jours:[],infos:defaultInfos()});await save();closeSheet();CURV=id;view="itin";render();window.scrollTo(0,0);}
+function editVoyage(id){const v=(DATA.voyages||[]).find(x=>x.id===id);if(!v)return;openSheet(`<h2>Modifier le voyage</h2>
+  <div class="field"><label>Nom</label><input id="v_titre" value="${esc(v.titre||"")}"></div>
+  <div class="field"><label>Lieu / destination</label><input id="v_lieu" value="${esc(v.lieu||"")}"></div>
+  <button class="btn primary" onclick="saveVoyageEdit('${id}')">Enregistrer</button>
+  <button class="btn del" onclick="delVoyage('${id}')">Supprimer ce voyage</button>`);}
+async function saveVoyageEdit(id){const v=(DATA.voyages||[]).find(x=>x.id===id);if(!v)return;v.titre=val("v_titre")||v.titre;v.lieu=val("v_lieu");await save();closeSheet();render();}
+async function delVoyage(id){if(!confirm("Supprimer ce voyage et toutes ses journées ?"))return;DATA.voyages=(DATA.voyages||[]).filter(x=>x.id!==id);await save();closeSheet();CURV=null;view="voyages";render();window.scrollTo(0,0);}
+
+/* ============ V84 : sauvegarde / import PAR voyage ============ */
+function openVoyageMenu(){
+  const v=trip();if(!v)return;
+  openSheet(`<h2>${esc(v.titre||"Voyage")}</h2>
+    <button class="btn primary" onclick="exportVoyage()">💾 Sauvegarder ce voyage (fichier)</button>
+    <button class="btn ghost" onclick="editVoyage('${v.id}')">✏️ Renommer / supprimer ce voyage</button>
+    <div style="font-size:12.5px;color:var(--ink-2);margin:14px 2px 0;line-height:1.55"><b>Sauvegarder :</b> crée un fichier de CE voyage uniquement (à garder ou à m'envoyer pour le modifier). Pour le récupérer : « Importer un voyage » depuis l'écran Mes voyages.</div>
+    <div class="ver" style="margin-top:16px">Version ${VERSION}</div>`);
+}
+function exportVoyage(){
+  try{
+    const v=trip();if(!v)return;
+    const json=JSON.stringify({app:"voyages",type:"voyage",voyage:v});
+    const slug=((v.titre||"voyage").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""))||"voyage";
+    const d=new Date(),pad=n=>String(n).padStart(2,"0");
+    const fname="voyage-"+slug+"-"+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+".json";
+    const blob=new Blob([json],{type:"application/json"});
+    if(navigator.canShare){const file=new File([blob],fname,{type:"application/json"});if(navigator.canShare({files:[file]})){navigator.share({files:[file],title:fname}).catch(e=>{if(e&&e.name!=="AbortError")fallbackDownload(blob,fname);});return;}}
+    fallbackDownload(blob,fname);
+  }catch(e){alert("Sauvegarde impossible : "+((e&&e.message)||e));}
+}
+function importVoyage(){
+  const inp=document.createElement("input");inp.type="file";inp.accept="application/json,.json";
+  inp.onchange=async()=>{
+    const f=inp.files&&inp.files[0];if(!f)return;
+    try{
+      const obj=JSON.parse(await f.text());
+      let add=[];
+      if(obj.voyage)add=[obj.voyage];
+      else if(Array.isArray(obj.voyages))add=obj.voyages;
+      else if(obj.trip&&Array.isArray(obj.trip.jours))add=[{id:uid(),titre:obj.trip.titre||"Voyage",lieu:"",jours:obj.trip.jours,infos:obj.infos||defaultInfos()}];
+      else throw new Error("fichier non reconnu");
+      DATA.voyages=DATA.voyages||[];
+      add.forEach(v=>{if(!v.id||DATA.voyages.some(x=>x.id===v.id))v.id=uid();if(!v.infos)v.infos=defaultInfos();(v.jours||[]).forEach(j=>(j.etapes||[]).forEach(migrateEtape));DATA.voyages.push(v);});
+      await save();closeSheet();CURV=null;view="voyages";render();window.scrollTo(0,0);
+      alert(add.length+" voyage(s) ajouté(s) ✔");
+    }catch(e){alert("Import impossible : "+((e&&e.message)||e));}
+  };
+  inp.click();
+}
 
 /* ---- nav ---- */
 function openDetail(jid,eid){if(view!=="detail")prevView=view;itinScroll=window.scrollY;cur={jid:jid,eid:eid};view="detail";render();window.scrollTo(0,0);}
@@ -749,12 +838,15 @@ function importData(){
     const f=inp.files&&inp.files[0];if(!f)return;
     try{
       const obj=JSON.parse(await f.text());
-      if(!obj||!obj.trip||!Array.isArray(obj.trip.jours))throw new Error("ce fichier n'est pas une sauvegarde Voyages");
-      const nj=obj.trip.jours.length;
-      if(!confirm("Importer ce fichier ?\n\n"+nj+" journée(s) seront chargées et REMPLACERONT l'itinéraire actuel.\n(Pense à « Sauvegarder » avant si besoin.)"))return;
+      const okOld=obj&&obj.trip&&Array.isArray(obj.trip.jours);
+      const okNew=obj&&Array.isArray(obj.voyages);
+      if(!okOld&&!okNew)throw new Error("ce fichier n'est pas une sauvegarde Voyages");
+      const nj=okNew?obj.voyages.reduce((s,v)=>s+((v.jours||[]).length),0):obj.trip.jours.length;
+      const nv=okNew?obj.voyages.length:1;
+      if(!confirm("Importer ce fichier ?\n\n"+nv+" voyage(s), "+nj+" journée(s) — REMPLACERONT tout le contenu actuel.\n(Pense à « Sauvegarder » avant si besoin.)"))return;
       DATA=obj;DATA.version=VERSION;migrate();await save();
-      closeSheet();view="itin";cur=null;render();window.scrollTo(0,0);
-      alert("Itinéraire importé ✔");
+      closeSheet();CURV=null;view="voyages";cur=null;render();window.scrollTo(0,0);
+      alert("Importé ✔");
     }catch(e){alert("Import impossible : "+(e&&e.message||e));}
   };
   inp.click();
@@ -762,7 +854,7 @@ function importData(){
 async function resetData(){
   if(!confirm("Revenir à l'itinéraire d'origine ?\n\nTOUTES tes modifications seront perdues."))return;
   if(!confirm("Dernière confirmation : effacer mes saisies et recharger l'itinéraire d'origine ?"))return;
-  DATA=seed();await save();closeSheet();view="itin";cur=null;render();window.scrollTo(0,0);
+  DATA=seed();migrate();await save();closeSheet();CURV=null;view="voyages";cur=null;render();window.scrollTo(0,0);
 }
 function openSettings(){
   openSheet(`<h2>Sauvegarde & réglages</h2>
@@ -785,7 +877,7 @@ function ev(debut,fin,groupe,nom,o){o=o||{};
   e.reserve=("reserve"in o)?o.reserve:null;return e;}
 function day(date,titre,etapes){return{id:uid(),date:date,titre:titre,etapes:etapes};}
 function seed(){
-  return {version:VERSION,infos:defaultInfos(),trip:{titre:"Crète — Anniversaire",jours:[
+  return {version:VERSION,infos:defaultInfos(),trip:{titre:"Crète",jours:[
     day("2026-06-16","Arrivée",[
       ev("13:00","18:00","Vol","Vol Paris → Héraklion",{lieu:"Aéroport d'Héraklion (HER)",cout:"320 €",reserve:true,
         f:{compagnie:"Transavia",num:"TO 3456",duree:"~3h20",ref:"XYZ123",sieges:"12A · 12B",terminal:"Orly 4",bagages:"1 soute + 1 cabine"},
