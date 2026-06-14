@@ -213,7 +213,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v87";
+const VERSION="v88";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -297,7 +297,7 @@ async function load(){const s=await getKV("data");
      Dès qu'il existe des données valides sur l'appareil, on les garde (la vérité = ton iPhone).
      Le seed ne sert qu'au tout premier lancement, quand rien n'est encore stocké. */
   if(s&&(s.voyages||(s.trip&&Array.isArray(s.trip.jours)))){DATA=s;DATA.version=VERSION;migrate();}
-  else{DATA=seed();migrate();}
+  else{DATA={version:VERSION,voyages:[]};migrate();}
   await save();}
 function migrateEtape(e){
   if(e.champs===undefined){e.champs=fToChamps(e.groupe,e.f||{});delete e.f;}
