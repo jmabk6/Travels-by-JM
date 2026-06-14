@@ -33,7 +33,7 @@ a{color:inherit;text-decoration:none}
 .top .add{width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:var(--sea);color:#fff;font-size:22px;line-height:34px;text-align:center}
 .top .sp{width:34px;flex:0 0 auto}
 
-.wrap{padding:6px 16px calc(var(--safe-b) + 40px)}
+.wrap{padding:6px 16px calc(var(--safe-b) + 96px)}
 
 /* day */
 .day{margin:22px 0 6px}
@@ -144,6 +144,53 @@ a{color:inherit;text-decoration:none}
 .lienrow input{margin-bottom:6px}
 .lienrow input:last-of-type{margin-bottom:0}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+
+/* ---- V59 : onglets + vues Aujourd'hui / Réservations / Infos ---- */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;width:100%;max-width:430px;margin:0 auto;background:rgba(251,250,246,.97);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 4px calc(var(--safe-b) + 6px)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 2px;font-size:10px;font-weight:700;color:var(--ink-2);letter-spacing:.01em}
+.tab .ti{font-size:21px;line-height:1}
+.tab.on{color:var(--sea)}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;font-size:10.5px;font-weight:800;color:#fff;vertical-align:middle}
+.today-hero{border-radius:20px;padding:18px;color:#fff;background:linear-gradient(135deg,var(--sea-deep),var(--sea) 70%,#1A9AA0);box-shadow:0 10px 24px rgba(11,95,103,.24);margin:8px 0 4px}
+.today-k{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#F4D9A2}
+.today-h{font-family:var(--serif);font-size:23px;font-weight:600;line-height:1.15;margin-top:3px}
+.today-now{margin-top:13px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);border-radius:13px;padding:11px 13px}
+.today-now .lbl{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;opacity:.88}
+.today-now .v{font-size:15.5px;font-weight:650;margin-top:2px;line-height:1.3}
+.countdown{font-family:var(--serif);font-size:44px;font-weight:600;line-height:1;margin-top:2px}
+.resa{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:9px}
+.resa-dot{flex:0 0 auto;width:11px;height:11px;border-radius:50%}
+.resa-b{flex:1;min-width:0}
+.resa-t{font-size:14.5px;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resa-m{font-size:12px;color:var(--ink-2);margin-top:2px}
+.resa-call{flex:0 0 auto;width:38px;height:38px;border-radius:11px;background:var(--sea);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px}
+.grp-h{display:flex;align-items:center;gap:9px;margin:20px 2px 11px;font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+.info-card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px 15px;margin-bottom:11px}
+.info-card h3{font-family:var(--serif);font-size:16.5px;font-weight:600;margin-bottom:5px}
+.info-line{font-size:14px;line-height:1.55;color:#3c4658}
+.info-line a{color:var(--sea);font-weight:600}
+.copybtn{display:inline-block;margin-top:10px;border:1px solid var(--sea);color:var(--sea);background:#fff;border-radius:9px;padding:8px 13px;font-size:13px;font-weight:700}
+.toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 17px;border-radius:999px;font-size:13px;font-weight:600;z-index:80;opacity:0;transition:opacity .2s;pointer-events:none;max-width:80%;text-align:center}
+.toast.on{opacity:.96}
+.stars{display:inline-flex;gap:6px;font-size:30px;line-height:1;color:#D9D2C2}
+.stars .star{cursor:pointer}
+.stars .star.on{color:var(--sun)}
+.avis-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin-top:2px}
+.avis-txt{font-size:14px;line-height:1.5;color:#3c4658;white-space:pre-wrap;margin-top:11px}
+.avis-card .copybtn{margin-top:12px}
+.day-rate{display:flex;align-items:center;gap:13px;padding:9px 4px 0;flex-wrap:wrap}
+.day-rate .stars{font-size:20px;gap:4px}
+.day-rate .mot{font-size:12.5px;font-weight:700;color:var(--sea)}
+.ev-stars{color:var(--sun);letter-spacing:1px}
+.ev.is-resto{background:#F6E7DD;border-color:#E7D2C2}
+.ev.is-detente{background:#EDF4EA;border-color:#DCE8D5}
+.ev.is-transport .ev-ttl{color:#969FAC;font-weight:600}
+.frise{padding:10px 4px 2px}
+.fr-bar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:var(--line-2)}
+.fr-seg{height:100%}
+.fr-seg+.fr-seg{border-left:1px solid rgba(255,255,255,.55)}
+.fr-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.fr-leg{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--ink-2)}
 </style>
 </head>
 <body>
@@ -153,7 +200,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v57";
+const VERSION="v76";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -171,7 +218,7 @@ function timeStack(e){const a=fmtTime(e.debut),b=fmtTime(e.fin);return a?(b?a+"<
 
 /* ---- groupes : champs spécifiques [clé,libellé] (en plus du tronc commun) ---- */
 const GROUPS={
- "Vol":[["compagnie","Compagnie"],["num","N° de vol"],["ref","Dossier / réf."],["sieges","Sièges"],["terminal","Terminal / porte"],["bagages","Bagages"]],
+ "Vol":[["compagnie","Compagnie"],["num","N° de vol"],["duree","Durée de vol"],["ref","Dossier / réf."],["sieges","Sièges"],["terminal","Terminal / porte"],["bagages","Bagages"]],
  "Transport":[["compagnie","Compagnie"],["ref","N° de réservation"],["depart","Lieu de départ"],["arrivee","Lieu d'arrivée"],["place","Place / siège"]],
  "Voiture":[["loueur","Loueur"],["ref","N° de réservation"],["prise","Lieu de prise"],["restitution","Lieu de restitution"],["modele","Modèle"],["assurance","Assurance"]],
  "Trajet":[["depart","Départ"],["arrivee","Arrivée"],["duree","Durée estimée"],["distance","Distance"]],
@@ -227,16 +274,16 @@ function openDB(){return new Promise(res=>{try{const r=indexedDB.open("voyages2"
 function getKV(k){return new Promise(r=>{if(useMem)return r(MEM[k]);const t=DB.transaction("kv","readonly").objectStore("kv").get(k);t.onsuccess=()=>r(t.result);t.onerror=()=>r(undefined);});}
 function putKV(k,v){return new Promise(r=>{if(useMem){MEM[k]=v;return r();}const t=DB.transaction("kv","readwrite").objectStore("kv").put(v,k);t.onsuccess=()=>r();t.onerror=()=>r();});}
 
-let DATA=null,view="itin",cur=null,SPK=null,itinScroll=0;
+let DATA=null,view="aujourdhui",prevView="aujourdhui",cur=null,SPK=null,itinScroll=0;
 async function save(){await putKV("data",DATA);}
 async function load(){const s=await getKV("data");
   /* V57 : on ne RÉINITIALISE plus jamais sur changement de version.
      Dès qu'il existe des données valides sur l'appareil, on les garde (la vérité = ton iPhone).
      Le seed ne sert qu'au tout premier lancement, quand rien n'est encore stocké. */
   if(s&&s.trip&&Array.isArray(s.trip.jours)){DATA=s;DATA.version=VERSION;migrate();}
-  else{DATA=seed();}
+  else{DATA=seed();migrate();}
   await save();}
-function migrate(){const t=DATA.trip;if(!t)return;(t.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>{
+function migrate(){if(!DATA.infos)DATA.infos=defaultInfos();const t=DATA.trip;if(!t)return;(t.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>{
   if(e.champs===undefined){e.champs=fToChamps(e.groupe,e.f||{});delete e.f;}
   if("nom"in e||"lieu"in e||"tel"in e){
     const has=l=>e.champs.some(c=>(c.label||"").trim().toLowerCase()===l.toLowerCase());
@@ -249,22 +296,24 @@ function migrate(){const t=DATA.trip;if(!t)return;(t.jours||[]).forEach(j=>(j.et
   if(e.actions===undefined){e.actions=(e.liens||[]).filter(l=>l&&(l.label||l.url)).map(l=>({type:"lien",label:l.label||"",url:l.url||""}));delete e.liens;}
   (e.actions||[]).forEach(a=>{if(a.type==="plan")a.type="itineraire";});
   if(e.titre===undefined){const ni=(e.champs||[]).findIndex(c=>(c.label||"").trim().toLowerCase()==="nom");if(ni>=0){e.titre=e.champs[ni].value||"";e.champs.splice(ni,1);}else e.titre="";}
+  if(e.groupe==="Autre"&&/^\s*(petit[- ]?d[ée]j|brunch|go[uû]ter)/i.test(e.titre||""))e.groupe="Restaurant";
 }));}
 const trip=()=>DATA.trip;
 function sortDay(j){if(j&&j.etapes)j.etapes.sort((a,b)=>(a.debut||"99:99").localeCompare(b.debut||"99:99"));}
 
 /* ---- render ---- */
-function render(){view==="detail"?renderDetail():renderItin();}
+function render(){
+  if(view==="detail")return renderDetail();
+  if(view==="aujourdhui")return renderToday();
+  if(view==="resas")return renderResas();
+  if(view==="infos")return renderInfos();
+  renderItin();
+}
 
 function renderItin(){
   const t=trip();
   const days=[...t.jours].sort((a,b)=>(a.date||"")<(b.date||"")?-1:1).map((j,di)=>{sortDay(j);
-    const evs=(j.etapes||[]).map(e=>{const m=gmeta(e.groupe);
-      return `<div class="ev t-${m.t} ${e.statut==='fait'?'done':''}" style="--gc:${m.c};--gb:${m.b}" onclick="openDetail('${j.id}','${e.id}')">
-        <div class="ev-time">${timeStack(e)}</div>
-        <div class="ev-chip">${m.i}</div>
-        <div class="ev-body"><div class="ev-ttl">${esc(etName(e))}</div><div class="ev-tag">${esc(e.groupe||"")}</div></div>
-        <span class="ev-chev">›</span></div>`;}).join("")
+    const evs=(j.etapes||[]).map(e=>evCard(j,e)).join("")
       ||'<div class="ev-empty">Aucune étape — touche « Modifier » pour en ajouter.</div>';
     return `<div class="day">
       <div class="day-banner">
@@ -272,6 +321,8 @@ function renderItin(){
         <div class="day-meta"><div class="day-date">${dLong(j.date)||"Jour "+(di+1)}</div><div class="day-title">${esc(j.titre)}</div></div>
         <button class="day-edit" onclick="event.stopPropagation();editDay('${j.id}')">Modifier</button>
       </div>
+      ${dayRateStrip(j)}
+      ${daySummary(j)}
       <div class="steps">${evs}</div>
     </div>`;
   }).join("");
@@ -280,7 +331,7 @@ function renderItin(){
     <div class="wrap">${t.jours.length?days:'<div class="empty">Aucune journée.</div>'}
       <button class="addday" onclick="editDay()">+ Ajouter une journée</button>
       <div class="ver">Mes Voyages · ${VERSION}</div>
-    </div>`;
+    </div>${tabBar('itin')}`;
 }
 
 function renderDetail(){
@@ -317,10 +368,10 @@ function renderDetail(){
     else if(a.type==="audio"&&a.texte){const pl=SPK&&SPK.jid===j.id&&SPK.eid===e.id&&SPK.ai===ai;acts.push(`<a class="act" onclick="speakAction('${j.id}','${e.id}',${ai})"><span class="ic">${pl?"⏸":"🔊"}</span><span>${pl?"Lecture en cours… (toucher pour arrêter)":esc(a.label||"Audio")}</span><span class="go">›</span></a>`);}
   });
   $("app").innerHTML=`
-    <div class="top"><button class="back" onclick="back()">‹ Itinéraire</button><h1>${esc(j.titre)}</h1><span class="sp"></span></div>
+    <div class="top"><button class="back" onclick="back()">‹ ${esc(backLabel())}</button><h1>${esc(j.titre)}</h1><span class="sp"></span></div>
     <div class="wrap">
       <div class="eyebrow">${[timeStack(e).replace("<br>"," – "),e.groupe].filter(Boolean).join(" · ")}</div>
-      <div class="d-title">${esc(nm)}</div>
+      <div class="d-title">${esc(nm)}${e.groupe==='Vol'&&(chVal(e,"Durée de vol")||chVal(e,"Durée"))?` <span style="font-size:.7em;color:var(--ink-2);font-weight:500">(${esc(chVal(e,"Durée de vol")||chVal(e,"Durée"))})</span>`:""}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0">
         <div>${reservePill}</div>
         <div class="statusbar" style="margin:0"><div class="chk ${e.statut==='fait'?'on':''}" onclick="toggleDone('${j.id}','${e.id}')">${e.statut==='fait'?'✓':''}</div>
@@ -329,17 +380,148 @@ function renderDetail(){
       ${rows.length?`<div class="sec-lbl">Infos</div><div class="card">${rows.join("")}</div>`:""}
       ${acts.length?`<div class="sec-lbl">Actions</div>${(e.actions||[]).some(a=>a.type==="audio"&&a.texte)?(()=>{const rate=DATA.audioRate||0.85;const mk=(r,l)=>`<button class="spd${Math.abs(rate-r)<0.01?' on':''}" onclick="setRate(${r})">${l}</button>`;return `<div class="speedrow">🔊 Vitesse&nbsp;: ${mk(0.7,'Lent')}${mk(0.85,'Moyen')}${mk(1,'Normal')}</div>`;})():""}${acts.join("")}`:""}
       ${e.notes?`<div class="sec-lbl">Notes</div><div class="notes-box">${esc(e.notes)}</div>`:""}
+      <div class="sec-lbl">Mon avis</div>
+      <div class="avis-card">
+        <div class="stars">${[1,2,3,4,5].map(i=>`<span class="star ${i<=(e.note||0)?'on':''}" onclick="rateEvent(${i})">★</span>`).join("")}</div>
+        ${e.commentaire?`<div class="avis-txt">${esc(e.commentaire)}</div>`:""}
+        <button class="copybtn" onclick="editComment()">${e.commentaire?"✎ Modifier mon commentaire":"+ Ajouter un commentaire"}</button>
+      </div>
       <button class="btn primary" onclick="editEvent('${j.id}','${e.id}')">Modifier l'étape</button>
       <button class="btn del" onclick="delEvent('${j.id}','${e.id}')">Supprimer l'étape</button>
     </div>`;
 }
 
+/* ============ V59 : vues Aujourd'hui / Réservations / Infos ============ */
+function todayISO(){const d=new Date(),p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}
+function nowHM(){const d=new Date(),p=n=>String(n).padStart(2,"0");return p(d.getHours())+":"+p(d.getMinutes());}
+function daysBetween(a,b){return Math.round((new Date(b+"T12:00")-new Date(a+"T12:00"))/86400000);}
+function parseAddr(v){const m=String(v||"").match(/^(.*?)\s*@\s*(-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?)\s*$/);return m?{disp:m[1].trim(),q:m[2].replace(/\s/g,'')}:{disp:String(v||""),q:String(v||"")};}
+
+function isRepas(e){if(e.groupe==="Restaurant")return true;return /petit[- ]?d[ée]j|d[ée]jeuner|d[îi]ner|brunch|go[uû]ter/i.test(e.titre||"");}
+function evCard(j,e){const m=gmeta(e.groupe);
+  return `<div class="ev t-${m.t} ${isRepas(e)?'is-resto':(macroOf(e.groupe)==='detente'?'is-detente':(e.groupe==='Vol'||e.groupe==='Transport'?'is-transport':''))} ${e.statut==='fait'?'done':''}" style="--gc:${m.c};--gb:${m.b}" onclick="openDetail('${j.id}','${e.id}')">
+    <div class="ev-time">${timeStack(e)}</div>
+    <div class="ev-chip">${m.i}</div>
+    <div class="ev-body"><div class="ev-ttl">${esc(etName(e))}${e.groupe==='Vol'&&(chVal(e,"Durée de vol")||chVal(e,"Durée"))?` (${esc(chVal(e,"Durée de vol")||chVal(e,"Durée"))})`:""}</div><div class="ev-tag">${esc(e.groupe||"")}${e.note?` · <span class="ev-stars">${"★".repeat(e.note)}</span>`:""}</div></div>
+    <span class="ev-chev">›</span></div>`;}
+
+function tabBar(active){
+  const t=trip();let nb=0;
+  (t.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>{if(e.reserve===false)nb++;}));
+  const tb=(v,ic,lbl,badge)=>`<button class="tab ${active===v?'on':''}" onclick="go('${v}')"><span class="ti">${ic}</span><span>${lbl}${badge?` <span class="badge" style="background:var(--coral)">${badge}</span>`:""}</span></button>`;
+  return `<div class="tabbar">${tb('aujourdhui','📅',"Auj.",0)}${tb('itin','🗺️','Itinéraire',0)}${tb('resas','🎟️','Résas',nb)}${tb('infos','ℹ️','Infos',0)}</div>`;
+}
+function go(v){if(view!=="detail")prevView=view;view=v;cur=null;render();window.scrollTo(0,0);}
+function topGeneric(titre){return `<div class="top"><button class="add" style="background:var(--card);color:var(--sea);border:1px solid var(--line);font-size:20px" onclick="openSettings()">⋯</button><h1>${esc(titre)}</h1><span class="sp"></span></div>`;}
+function backLabel(){return {aujourdhui:"Aujourd'hui",itin:"Itinéraire",resas:"Réservations",infos:"Infos"}[prevView]||"Retour";}
+
+function renderToday(){
+  const t=trip();const jours=[...t.jours].sort((a,b)=>(a.date||"")<(b.date||"")?-1:1);
+  const today=todayISO();
+  const start=jours.length?jours[0].date:null,end=jours.length?jours[jours.length-1].date:null;
+  let hero="",body="";
+  const jT=jours.find(j=>j.date===today);
+  if(jT){
+    sortDay(jT);const now=nowHM();const steps=jT.etapes||[];let cur2=null,nx=null;
+    steps.forEach(e=>{if(e.debut&&e.debut<=now&&(!e.fin||e.fin>now))cur2=e;});
+    nx=steps.find(e=>e.debut&&e.debut>now);
+    const di=jours.indexOf(jT)+1;
+    const nowB=cur2?`<div class="today-now"><div class="lbl">⟡ Maintenant</div><div class="v">${esc(etName(cur2))}${cur2.fin?` · jusqu'à ${fmtTime(cur2.fin)}`:""}</div></div>`:"";
+    const nxB=nx?`<div class="today-now"><div class="lbl">→ Ensuite</div><div class="v">${nx.debut?fmtTime(nx.debut)+" · ":""}${esc(etName(nx))}</div></div>`:(cur2?"":`<div class="today-now"><div class="v">Journée terminée — bonne soirée 🌙</div></div>`);
+    hero=`<div class="today-hero"><div class="today-k">${dLong(today)} · Jour ${di}</div><div class="today-h">${esc(jT.titre)}</div>${nowB}${nxB}</div>`;
+    const bilan=`<div class="sec-lbl">Ton bilan du jour</div><div class="avis-card"><div class="stars">${[1,2,3,4,5].map(i=>`<span class="star ${i<=(jT.note||0)?'on':''}" onclick="rateDay('${jT.id}',${i})">★</span>`).join("")}</div>${jT.commentaire?`<div class="avis-txt">${esc(jT.commentaire)}</div>`:""}<button class="copybtn" onclick="editDayComment('${jT.id}')">${jT.commentaire?"✎ Modifier le mot du jour":"+ Ajouter un mot sur la journée"}</button></div>`;
+    body=`${daySummary(jT)?`<div class="sec-lbl">La forme du jour</div>${daySummary(jT)}`:""}<div class="sec-lbl">Le programme du jour</div><div class="steps">${steps.map(e=>evCard(jT,e)).join("")||'<div class="ev-empty">Rien de prévu aujourd’hui.</div>'}</div>${bilan}`;
+  }else if(start&&today<start){
+    const dd=daysBetween(today,start);const j1=jours[0];sortDay(j1);
+    hero=`<div class="today-hero"><div class="today-k">${esc(t.titre)}</div><div class="today-h">Départ ${dLong(start)}</div><div class="today-now" style="text-align:center"><div class="lbl">Plus que</div><div class="countdown">J-${dd}</div></div></div>`;
+    body=`${daySummary(j1)?`<div class="sec-lbl">La forme du jour</div>${daySummary(j1)}`:""}<div class="sec-lbl">Le premier jour — ${esc(j1.titre)}</div><div class="steps">${(j1.etapes||[]).map(e=>evCard(j1,e)).join("")}</div>`;
+  }else if(end&&today>end){
+    hero=`<div class="today-hero"><div class="today-k">${esc(t.titre)}</div><div class="today-h">Voyage terminé ✨</div><div class="today-now"><div class="v">J’espère que c’était magnifique. Toutes tes données sont conservées.</div></div></div>`;
+  }else{
+    hero=`<div class="today-hero"><div class="today-h">${esc(t.titre)}</div></div>`;
+  }
+  $("app").innerHTML=topGeneric("Aujourd'hui")+`<div class="wrap">${hero}${body}</div>`+tabBar('aujourdhui');
+}
+
+function renderResas(){
+  const t=trip();const jours=[...t.jours].sort((a,b)=>(a.date||"")<(b.date||"")?-1:1);
+  const bk={f:[],t:[],na:[]};
+  jours.forEach(j=>(j.etapes||[]).forEach(e=>{if(e.reserve===false)bk.f.push([j,e]);else if(e.reserve===true)bk.t.push([j,e]);else if(e.reserve==="na")bk.na.push([j,e]);}));
+  const row=(j,e,color)=>{const tel=etTel(e);return `<div class="resa" onclick="openDetail('${j.id}','${e.id}')"><span class="resa-dot" style="background:${color}"></span><div class="resa-b"><div class="resa-t">${esc(etName(e))}</div><div class="resa-m">${esc(dShort(j.date))}${e.debut?" · "+fmtTime(e.debut):""}</div></div>${tel?`<a class="resa-call" href="tel:${esc(cleanTel(tel))}" onclick="event.stopPropagation()">📞</a>`:""}</div>`;};
+  const sec=(title,arr,color)=>arr.length?`<div class="grp-h">${title} <span class="badge" style="background:${color}">${arr.length}</span></div>${arr.map(([j,e])=>row(j,e,color)).join("")}`:"";
+  const html=(sec("🔴 À réserver",bk.f,"#C75D4F")+sec("🟢 Réservé",bk.t,"#4F8A5B")+sec("⚪ Sans réservation",bk.na,"#9AA0A8"))||'<div class="empty">Aucune réservation à suivre.</div>';
+  $("app").innerHTML=topGeneric("Réservations")+`<div class="wrap">${html}</div>`+tabBar('resas');
+}
+
+function defaultInfos(){return {
+  regimeEn:"My wife eats only fish and vegetarian dishes (no meat, no shellfish/molluscs); I don't eat pork.",
+  regimeFr:"Ma femme mange uniquement du poisson et des plats végétariens (pas de viande, ni crustacés ni mollusques). Moi, pas de porc.",
+  urgences:[{label:"Urgences (UE)",num:"112"},{label:"Police",num:"100"},{label:"Ambulance",num:"166"},{label:"Pompiers",num:"199"}],
+  notes:""};}
+function renderInfos(){
+  const inf=DATA.infos||defaultInfos();const t=trip();
+  const pick=gs=>{const out=[],seen={};(t.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>{if(gs.includes(e.groupe)){const k=etAddr(e)||etName(e);if(k&&!seen[k]){seen[k]=1;out.push(e);}}}));return out;};
+  const fieldRow=(e,lbls)=>lbls.map(l=>{const v=chVal(e,l);return v?`<div class="info-line"><b>${esc(l)} :</b> ${esc(v)}</div>`:"";}).join("");
+  const card=(e,byAddr)=>{const addr=etAddr(e),tel=etTel(e),pa=addr?parseAddr(addr):null;const title=byAddr&&pa?pa.disp:etName(e);
+    return `<div class="info-card"><h3>${esc(title)}</h3>${pa?`<div class="info-line">📍 <a href="${mapUrl(pa.q)}" target="_blank" rel="noopener">${byAddr?"Ouvrir dans Maps":esc(pa.disp)+" ↗"}</a></div>`:""}${tel?`<div class="info-line">📞 <a href="tel:${esc(cleanTel(tel))}">${esc(tel)}</a></div>`:""}${fieldRow(e,["N° de réservation","Check-in","Check-out","N° de chambre","Formule","N° de vol","Dossier / réf.","Sièges","Loueur"])}</div>`;};
+  const hotels=pick(["Hôtel"]),vols=pick(["Vol"]),autos=pick(["Voiture"]);
+  $("app").innerHTML=topGeneric("Infos pratiques")+`<div class="wrap">
+    <div class="info-card"><h3>🍽️ Régime — à montrer / dire</h3><div class="info-line" style="font-style:italic">« ${esc(inf.regimeEn)} »</div><button class="copybtn" onclick="copyRegime()">📋 Copier (anglais)</button><div class="info-line" style="margin-top:11px;color:var(--ink-2)">${esc(inf.regimeFr)}</div></div>
+    <div class="grp-h">🆘 Numéros d'urgence</div><div class="info-card">${inf.urgences.map(u=>`<div class="info-line">${esc(u.label)} : <a href="tel:${esc(u.num)}"><b>${esc(u.num)}</b></a></div>`).join("")}</div>
+    ${vols.length?`<div class="grp-h">✈️ Vol</div>${vols.map(e=>card(e,false)).join("")}`:""}
+    ${hotels.length?`<div class="grp-h">🏨 Hébergements</div>${hotels.map(e=>card(e,true)).join("")}`:""}
+    ${autos.length?`<div class="grp-h">🚗 Voiture</div>${autos.map(e=>card(e,false)).join("")}`:""}
+    ${inf.notes?`<div class="grp-h">📝 Mes notes</div><div class="notes-box">${esc(inf.notes)}</div>`:""}
+    <button class="btn ghost" style="margin-top:16px" onclick="editInfos()">Modifier les infos pratiques</button>
+  </div>`+tabBar('infos');
+}
+function copyRegime(){copyText((DATA.infos||defaultInfos()).regimeEn);}
+function editInfos(){const inf=DATA.infos||defaultInfos();
+  openSheet(`<h2>Infos pratiques</h2>
+    <div class="field"><label>Phrase régime (anglais)</label><textarea id="i_en" style="min-height:84px">${esc(inf.regimeEn)}</textarea></div>
+    <div class="field"><label>Phrase régime (français)</label><textarea id="i_fr" style="min-height:84px">${esc(inf.regimeFr)}</textarea></div>
+    <div class="field"><label>Mes notes (wifi, chambre, divers…)</label><textarea id="i_notes" style="min-height:96px">${esc(inf.notes)}</textarea></div>
+    <button class="btn primary" onclick="saveInfos()">Enregistrer</button>`);}
+async function saveInfos(){DATA.infos=DATA.infos||defaultInfos();DATA.infos.regimeEn=val("i_en");DATA.infos.regimeFr=val("i_fr");DATA.infos.notes=$("i_notes").value;await save();closeSheet();render();}
+
+function copyText(str){try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(str).then(()=>toast("Copié ✔"),()=>fallbackCopy(str));}else fallbackCopy(str);}catch(e){fallbackCopy(str);}}
+function fallbackCopy(str){try{const ta=document.createElement("textarea");ta.value=str;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.focus();ta.select();document.execCommand("copy");ta.remove();toast("Copié ✔");}catch(e){alert("Copie impossible.");}}
+let toastT=null;
+function toast(msg){let el=$("toast");if(!el){el=document.createElement("div");el.id="toast";el.className="toast";document.body.appendChild(el);}el.textContent=msg;el.classList.add("on");if(toastT)clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("on"),1600);}
+
+/* ============ V60 : notation étoiles + commentaires ============ */
+function curEtape(){if(!cur)return null;const j=trip().jours.find(x=>x.id===cur.jid);return j?j.etapes.find(x=>x.id===cur.eid):null;}
+async function rateEvent(n){const e=curEtape();if(!e)return;e.note=(e.note===n?0:n);await save();render();}
+function editComment(){const e=curEtape();if(!e)return;openSheet(`<h2>Mon commentaire</h2><div class="field"><textarea id="c_txt" style="min-height:120px" placeholder="Qu'en avez-vous pensé ?">${esc(e.commentaire||"")}</textarea></div><button class="btn primary" onclick="saveComment()">Enregistrer</button>`);}
+async function saveComment(){const e=curEtape();if(!e)return;e.commentaire=$("c_txt").value.trim();await save();closeSheet();render();}
+function findDay(jid){return trip().jours.find(x=>x.id===jid);}
+async function rateDay(jid,n){const j=findDay(jid);if(!j)return;j.note=(j.note===n?0:n);await save();render();}
+function editDayComment(jid){const j=findDay(jid);if(!j)return;openSheet(`<h2>Le mot du jour</h2><div class="field"><textarea id="dc_txt" style="min-height:120px" placeholder="Un mot sur cette journée…">${esc(j.commentaire||"")}</textarea></div><button class="btn primary" onclick="saveDayComment('${jid}')">Enregistrer</button>`);}
+async function saveDayComment(jid){const j=findDay(jid);if(!j)return;j.commentaire=$("dc_txt").value.trim();await save();closeSheet();render();}
+function dayRateStrip(j){return `<div class="day-rate"><div class="stars">${[1,2,3,4,5].map(i=>`<span class="star ${i<=(j.note||0)?'on':''}" onclick="event.stopPropagation();rateDay('${j.id}',${i})">★</span>`).join("")}</div><span class="mot" onclick="event.stopPropagation();editDayComment('${j.id}')">${j.commentaire?"✎ "+esc(j.commentaire.length>34?j.commentaire.slice(0,34)+"…":j.commentaire):"+ mot du jour"}</span></div>`;}
+
+/* ============ V61 : synthèse + frise de journée ============ */
+function durMin(e){if(!e.debut||!e.fin)return 0;const a=e.debut.split(":"),b=e.fin.split(":");let d=(+b[0]*60+ +b[1])-(+a[0]*60+ +a[1]);if(d<0)d+=1440;return d>0?d:0;}
+function fmtDur(min){if(min<=0)return"";const h=Math.floor(min/60),m=min%60;return h?(m?h+"h"+String(m).padStart(2,"0"):h+"h"):m+"min";}
+function macroOf(g){if(["Visite","Activité","Nature"].includes(g))return"act";if(["Trajet","Vol","Transport","Voiture"].includes(g))return"trajet";return"detente";}
+const MACRO={act:{label:"Visites & activités",i:"🏛️",c:"#C75D4F"},trajet:{label:"Trajets",i:"🚗",c:"#BCC2CA"},detente:{label:"Détente",i:"🌿",c:"#84BC95"}};
+function daySummary(j){
+  const steps=(j.etapes||[]).filter(e=>durMin(e)>0);
+  if(!steps.length)return"";
+  const byM={};steps.forEach(e=>{const k=macroOf(e.groupe);byM[k]=(byM[k]||0)+durMin(e);});
+  const total=Object.keys(byM).reduce((s,k)=>s+byM[k],0);
+  const order=["act","trajet","detente"].filter(k=>byM[k]);
+  const bar=order.map(k=>{const mc=MACRO[k];return `<span class="fr-seg" style="width:${(byM[k]/total*100).toFixed(2)}%;background:${mc.c}"></span>`;}).join("");
+  const legend=order.map(k=>{const mc=MACRO[k];return `<span class="fr-leg">${mc.i} ${mc.label} ${fmtDur(byM[k])}</span>`;}).join("");
+  return `<div class="frise"><div class="fr-bar">${bar}</div><div class="fr-legend">${legend}</div></div>`;
+}
+
 /* ---- nav ---- */
-function openDetail(jid,eid){itinScroll=window.scrollY;cur={jid:jid,eid:eid};view="detail";render();window.scrollTo(0,0);}
+function openDetail(jid,eid){if(view!=="detail")prevView=view;itinScroll=window.scrollY;cur={jid:jid,eid:eid};view="detail";render();window.scrollTo(0,0);}
 function openImg(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.data)return;$("imgView").innerHTML=`<img src="${a.data}" alt="">`;$("imgView").classList.add("on");}
 function closeImg(){$("imgView").classList.remove("on");$("imgView").innerHTML="";}
 function openAtt(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.data)return;try{const url=URL.createObjectURL(dataUrlToBlob(a.data));window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(err){const w=window.open();if(w)w.location=a.data;}}
-function back(){stopSpeak();view="itin";cur=null;render();requestAnimationFrame(function(){window.scrollTo(0,itinScroll||0);});}
+function back(){stopSpeak();view=prevView||"aujourdhui";cur=null;render();requestAnimationFrame(function(){window.scrollTo(0,itinScroll||0);});}
 function stopSpeak(){try{if('speechSynthesis' in window)speechSynthesis.cancel();}catch(e){}SPK=null;}
 function speakAction(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.texte)return;
   if(!('speechSynthesis' in window)){alert("La lecture audio n'est pas disponible sur cet appareil.");return;}
@@ -411,8 +593,9 @@ function renderEditor(){
     <div class="field"><label>Infos (champs libres — adresse, téléphone…)</label>${champsRows}<button class="btn ghost sm" onclick="addChamp()">+ Ajouter un champ</button></div>
     <div class="field r2"><div><label>Coût</label><input id="f_cout" value="${esc(e.cout)}" placeholder="ex. 320 €"></div>
       <div><label>Réservation</label><select id="f_reserve"><option value="">—</option><option value="1" ${e.reserve===true?"selected":""}>Réservé</option><option value="0" ${e.reserve===false?"selected":""}>À réserver</option><option value="na" ${e.reserve==='na'?"selected":""}>Non réservable</option></select></div></div>
-    <div class="field"><label>Actions</label>${actRows}
-      <div class="actadd"><button onclick="addAction('lien')">🔗 Lien</button><button onclick="addAction('adresse')">📍 Plans</button><button onclick="addAction('itineraire')">🧭 Itinéraire</button><button onclick="addAction('fichier')">📄 Fichier</button><button onclick="addAction('photo')">🖼 Photo</button><button onclick="addAction('audio')">🔊 Audio</button></div></div>
+    <div class="field"><label>Actions à ajouter</label>
+      <div style="font-size:12px;color:var(--ink-2);margin:-2px 0 9px;line-height:1.45">📍 Maps, 🚗 Itinéraire et 📞 Appeler s'affichent <b>automatiquement</b> dès que l'adresse / le téléphone sont remplis. Ici, ajoute seulement le reste :</div>${actRows}
+      <div class="actadd"><button onclick="addAction('lien')">🔗 Lien</button><button onclick="addAction('fichier')">📄 Fichier</button><button onclick="addAction('photo')">🖼 Photo</button><button onclick="addAction('audio')">🔊 Audio</button></div></div>
     <div class="field"><label>Notes</label><textarea id="f_notes" style="min-height:80px">${esc(e.notes)}</textarea></div>
     <button class="btn primary" onclick="saveEvent()">Enregistrer</button>
     ${isNew?"":`<button class="btn del" onclick="delEvent('${EDIT_CTX.jid}','${EDIT_CTX.eid}')">Supprimer l'étape</button>`}`);
@@ -517,10 +700,10 @@ function ev(debut,fin,groupe,nom,o){o=o||{};
   e.reserve=("reserve"in o)?o.reserve:null;return e;}
 function day(date,titre,etapes){return{id:uid(),date:date,titre:titre,etapes:etapes};}
 function seed(){
-  return {version:VERSION,trip:{titre:"Crète — Anniversaire",jours:[
+  return {version:VERSION,infos:defaultInfos(),trip:{titre:"Crète — Anniversaire",jours:[
     day("2026-06-16","Arrivée",[
       ev("13:00","18:00","Vol","Vol Paris → Héraklion",{lieu:"Aéroport d'Héraklion (HER)",cout:"320 €",reserve:true,
-        f:{compagnie:"Transavia",num:"TO 3456",ref:"XYZ123",sieges:"12A · 12B",terminal:"Orly 4",bagages:"1 soute + 1 cabine"},
+        f:{compagnie:"Transavia",num:"TO 3456",duree:"~3h20",ref:"XYZ123",sieges:"12A · 12B",terminal:"Orly 4",bagages:"1 soute + 1 cabine"},
         liens:[{label:"Carte d'embarquement",url:""},{label:"Mail de réservation",url:""}],notes:"Arriver 2h avant."}),
       ev("18:30","","Voiture","Prise de la voiture de location",{lieu:"Aéroport d'Héraklion",reserve:true,f:{loueur:"",ref:""}}),
       ev("19:00","20:00","Trajet","Aéroport → Hôtel Elounda Infinity Exclusive Resort & Spa",{lieu:"Elounda Infinity Exclusive Resort & Spa, Elounda",f:{depart:"Aéroport d'Héraklion",arrivee:"Elounda",duree:"~1h"}}),
@@ -608,7 +791,8 @@ function seed(){
     ]),
     day("2026-06-23","Départ",[
       ev("09:00","","Hôtel","Petit-déjeuner & check-out",{lieu:"Samaria Hotel, Chania"}),
-      ev("10:00","","Trajet","Route vers l'aéroport de Chania",{lieu:"Aéroport de Chania",f:{duree:"~20 min"}})
+      ev("10:00","","Trajet","Route vers l'aéroport de Chania",{lieu:"Aéroport de Chania",f:{duree:"~20 min"}}),
+      ev("13:00","","Vol","Vol Chania → Paris",{lieu:"Aéroport de Chania (CHQ)",reserve:true,f:{compagnie:"Transavia",num:"",duree:"~3h30",ref:"",sieges:"",terminal:"",bagages:"1 soute + 1 cabine"},notes:"⚠️ Vérifier l'heure de départ réelle et le n° de vol."})
     ])
   ]}};
 }
