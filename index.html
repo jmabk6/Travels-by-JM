@@ -211,7 +211,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v84";
+const VERSION="v85";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -670,9 +670,18 @@ function importVoyage(){
       else if(obj.trip&&Array.isArray(obj.trip.jours))add=[{id:uid(),titre:obj.trip.titre||"Voyage",lieu:"",jours:obj.trip.jours,infos:obj.infos||defaultInfos()}];
       else throw new Error("fichier non reconnu");
       DATA.voyages=DATA.voyages||[];
-      add.forEach(v=>{if(!v.id||DATA.voyages.some(x=>x.id===v.id))v.id=uid();if(!v.infos)v.infos=defaultInfos();(v.jours||[]).forEach(j=>(j.etapes||[]).forEach(migrateEtape));DATA.voyages.push(v);});
+      let upd=0,added=0;
+      for(const v of add){
+        if(!v.infos)v.infos=defaultInfos();
+        (v.jours||[]).forEach(j=>(j.etapes||[]).forEach(migrateEtape));
+        const idx=v.id?DATA.voyages.findIndex(x=>x.id===v.id):-1;
+        if(idx>=0){
+          if(!confirm("Le voyage « "+(v.titre||"")+" » existe déjà.\nLe METTRE À JOUR avec cette version ? (tes modifs précédentes sur ce voyage seront remplacées)"))continue;
+          DATA.voyages[idx]=v;upd++;
+        }else{if(!v.id)v.id=uid();DATA.voyages.push(v);added++;}
+      }
       await save();closeSheet();CURV=null;view="voyages";render();window.scrollTo(0,0);
-      alert(add.length+" voyage(s) ajouté(s) ✔");
+      alert((((upd?upd+" voyage(s) mis à jour. ":"")+(added?added+" ajouté(s).":"")).trim())||"Rien d'importé.");
     }catch(e){alert("Import impossible : "+((e&&e.message)||e));}
   };
   inp.click();
