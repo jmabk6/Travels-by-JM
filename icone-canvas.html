@@ -1,0 +1,29 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Icône Mes Voyages</title>
+<style>body{background:#222;color:#eee;font-family:system-ui;text-align:center;padding:24px}
+button{font-size:16px;padding:12px 20px;border-radius:10px;border:none;background:#0E7C86;color:#fff;font-weight:600;margin-top:16px;cursor:pointer}
+canvas{border-radius:48px;box-shadow:0 10px 40px rgba(0,0,0,.5)}</style></head>
+<body>
+<h2>Icône « Mes Voyages »</h2>
+<div id="holder"></div>
+<button onclick="dl()">Télécharger apple-touch-icon.png</button>
+<script>
+const S=1024,c=document.createElement("canvas");c.width=S;c.height=S;const x=c.getContext("2d");
+const hor=Math.round(0.62*S);
+let sky=x.createLinearGradient(0,0,0,hor);
+sky.addColorStop(0,"#0E2E38");sky.addColorStop(0.5,"#0E6E78");sky.addColorStop(0.82,"#3AA0A4");sky.addColorStop(1,"#F0C474");
+x.fillStyle=sky;x.fillRect(0,0,S,hor);
+function halo(r,a){x.globalAlpha=a;x.fillStyle="#F8CD72";x.beginPath();x.arc(S/2,0.545*S,r,0,7);x.fill();}
+halo(0.295*S,0.12);halo(0.21*S,0.16);x.globalAlpha=1;
+let sun=x.createRadialGradient(S/2,0.545*S,4,S/2,0.545*S,0.15*S);
+sun.addColorStop(0,"#FFF1C9");sun.addColorStop(0.45,"#F8CD72");sun.addColorStop(1,"#E29B34");
+x.fillStyle=sun;x.beginPath();x.arc(S/2,0.545*S,0.15*S,0,7);x.fill();
+let sea=x.createLinearGradient(0,hor,0,S);sea.addColorStop(0,"#1C8C8C");sea.addColorStop(1,"#08454C");
+x.fillStyle=sea;x.fillRect(0,hor,S,S-hor);
+x.globalAlpha=0.30;x.fillStyle="#F6C96B";x.beginPath();x.ellipse(S/2,0.825*S,0.075*S,0.20*S,0,0,7);x.fill();x.globalAlpha=1;
+function wave(y,a){x.globalAlpha=a;x.strokeStyle="#EAF6F3";x.lineWidth=0.012*S;x.lineCap="round";x.beginPath();const amp=0.022*S,seg=S/5;x.moveTo(0,y);for(let i=0;i<5;i++){x.quadraticCurveTo(seg*i+seg*0.25,y-amp,seg*i+seg*0.5,y);x.quadraticCurveTo(seg*i+seg*0.75,y+amp,seg*(i+1),y);}x.stroke();}
+wave(0.725*S,0.32);wave(0.825*S,0.26);wave(0.92*S,0.20);x.globalAlpha=1;
+window.__png=c.toDataURL("image/png");
+const view=c.cloneNode(true);view.getContext("2d").drawImage(c,0,0);view.style.width="256px";view.style.height="256px";document.getElementById("holder").appendChild(view);
+function dl(){const a=document.createElement("a");a.href=window.__png;a.download="apple-touch-icon.png";a.click();}
+</script>
+</body></html>
