@@ -200,7 +200,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v78";
+const VERSION="v79";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -367,8 +367,7 @@ function renderDetail(){
     else if(a.type==="itineraire"&&(a.depart||a.arrivee))acts.push(`<a class="act" href="${dirUrl(a.depart,a.arrivee)}" target="_blank" rel="noopener"><span class="ic">🧭</span><span>${esc(a.label||((a.depart||"?")+" → "+(a.arrivee||"?")))}</span><span class="go">›</span></a>`);
     else if(a.type==="fichier"&&a.data)acts.push(`<a class="act" onclick="openAtt('${j.id}','${e.id}',${ai})"><span class="ic">📄</span><span>${esc(a.label||a.name||"Fichier")}</span><span class="go">›</span></a>`);
     else if(a.type==="photo"&&a.data)acts.push(`<a class="act" onclick="openImg('${j.id}','${e.id}',${ai})"><span class="ic">🖼</span><span>${esc(a.label||a.name||"Photo")}</span><span class="go">›</span></a>`);
-    else if(a.type==="voix"&&a.recId)acts.push(`<a class="act" onclick="playVoix('${j.id}','${e.id}',${ai})"><span class="ic">🎙️</span><span>${esc(a.label||"Ma voix")}</span><span class="go">▶︎</span></a>`);
-    else if(a.type==="audio"&&a.texte){const pl=SPK&&SPK.jid===j.id&&SPK.eid===e.id&&SPK.ai===ai;acts.push(`<a class="act" onclick="speakAction('${j.id}','${e.id}',${ai})"><span class="ic">${pl?"⏸":"🔊"}</span><span>${pl?"Lecture en cours… (toucher pour arrêter)":esc(a.label||"Audio")}</span><span class="go">›</span></a>`);}
+    else if(a.type==="audio"&&(a.texte||a.recId))acts.push(`<a class="act" onclick="openChapitre('${j.id}','${e.id}',${ai})"><span class="ic">${a.recId?"🎙️":"📖"}</span><span>${esc(a.label||"Chapitre")}</span><span class="go">${a.recId?"▶︎":"›"}</span></a>`);
   });
   $("app").innerHTML=`
     <div class="top"><button class="back" onclick="back()">‹ ${esc(backLabel())}</button><h1>${esc(j.titre)}</h1><span class="sp"></span></div>
@@ -381,7 +380,7 @@ function renderDetail(){
           <span style="font-size:13px;color:var(--ink-2)">${e.statut==='fait'?'Fait':'À faire'}</span></div>
       </div>
       ${rows.length?`<div class="sec-lbl">Infos</div><div class="card">${rows.join("")}</div>`:""}
-      ${acts.length?`<div class="sec-lbl">Actions</div>${(e.actions||[]).some(a=>a.type==="audio"&&a.texte)?(()=>{const rate=DATA.audioRate||0.85;const mk=(r,l)=>`<button class="spd${Math.abs(rate-r)<0.01?' on':''}" onclick="setRate(${r})">${l}</button>`;return `<div class="speedrow">🔊 Vitesse&nbsp;: ${mk(0.7,'Lent')}${mk(0.85,'Moyen')}${mk(1,'Normal')}</div>`;})():""}${acts.join("")}`:""}
+      ${acts.length?`<div class="sec-lbl">Actions</div>${acts.join("")}`:""}
       ${e.notes?`<div class="sec-lbl">Notes</div><div class="notes-box">${esc(e.notes)}</div>`:""}
       <div class="sec-lbl">Mon avis</div>
       <div class="avis-card">
@@ -389,7 +388,6 @@ function renderDetail(){
         ${e.commentaire?`<div class="avis-txt">${esc(e.commentaire)}</div>`:""}
         <button class="copybtn" onclick="editComment()">${e.commentaire?"✎ Modifier mon commentaire":"+ Ajouter un commentaire"}</button>
       </div>
-      <button class="btn ghost" onclick="openRecorder('${j.id}','${e.id}')">🎙️ Enregistrer ma voix</button>
       <button class="btn primary" onclick="editEvent('${j.id}','${e.id}')">Modifier l'étape</button>
       <button class="btn del" onclick="delEvent('${j.id}','${e.id}')">Supprimer l'étape</button>
     </div>`;
@@ -520,16 +518,17 @@ function daySummary(j){
   return `<div class="frise"><div class="fr-bar">${bar}</div><div class="fr-legend">${legend}</div></div>`;
 }
 
-/* ============ V78 : enregistrement de ma propre voix ============ */
+/* ============ V79 : chapitre = texte à lire + enregistrement de ma voix ============ */
 let RECMR=null,RECCHUNKS=[],RECSTREAM=null,RECBLOB=null,RECURL=null,RECCTX=null,VAUDIO=null;
-function openRecorder(jid,eid){RECCTX={jid:jid,eid:eid};if(RECURL){try{URL.revokeObjectURL(RECURL);}catch(e){}RECURL=null;}RECBLOB=null;renderRecorder("idle");}
-function renderRecorder(state,extra){
-  let inner="";
-  if(state==="idle")inner=`<p style="font-size:13.5px;color:var(--ink-2);line-height:1.5;margin-bottom:14px">Lis ton texte à voix haute et enregistre-toi : ta voix remplacera le robot 🙂</p><button class="btn primary" onclick="startRec()">🎙️ Démarrer</button>`;
-  else if(state==="rec")inner=`<div style="text-align:center;font-size:16px;color:var(--coral);font-weight:700;margin:12px 0 18px">● Enregistrement en cours…</div><button class="btn del" onclick="stopRec()">⏹ Arrêter</button>`;
-  else if(state==="done")inner=`<audio controls src="${RECURL}" style="width:100%;margin:4px 0 14px"></audio><div class="field"><label>Intitulé</label><input id="rec_lbl" value="${esc(extra||"Ma voix")}" placeholder="ex. Chapitre 1"></div><button class="btn primary" onclick="saveRec()">💾 Garder</button><button class="btn ghost" onclick="startRec()">↺ Refaire</button>`;
-  else inner=`<div style="font-size:14px;color:var(--coral);white-space:pre-wrap;line-height:1.5;margin-bottom:14px">${esc(extra||"Micro indisponible.")}</div><button class="btn ghost" onclick="closeSheet()">Fermer</button>`;
-  openSheet(`<h2>🎙️ Enregistrer ma voix</h2>${inner}`);
+function curChapAction(){if(!RECCTX)return null;const j=trip().jours.find(x=>x.id===RECCTX.jid);const e=j&&j.etapes.find(x=>x.id===RECCTX.eid);return e?(e.actions||[])[RECCTX.ai]:null;}
+function openChapitre(jid,eid,ai){RECCTX={jid:jid,eid:eid,ai:ai};if(RECURL){try{URL.revokeObjectURL(RECURL);}catch(e){}RECURL=null;}RECBLOB=null;renderChapitre();}
+function renderChapitre(){
+  const a=curChapAction();if(!a){closeSheet();return;}
+  const txt=`<div style="font-size:15px;line-height:1.6;white-space:pre-wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;max-height:46vh;overflow:auto">${esc(a.texte||"(pas de texte)")}</div>`;
+  const ctrl=a.recId
+    ? `<button class="btn primary" onclick="playChap()">▶︎ Écouter ma voix</button><button class="btn ghost" onclick="startRec()">↺ Refaire l’enregistrement</button>`
+    : `<button class="btn primary" onclick="startRec()">🎙️ Enregistrer ma voix</button>`;
+  openSheet(`<h2>${esc(a.label||"Chapitre")}</h2>${txt}${ctrl}`);
 }
 async function startRec(){
   try{
@@ -537,25 +536,24 @@ async function startRec(){
     RECSTREAM=await navigator.mediaDevices.getUserMedia({audio:true});
     RECMR=new MediaRecorder(RECSTREAM);
     RECMR.ondataavailable=ev=>{if(ev.data&&ev.data.size)RECCHUNKS.push(ev.data);};
-    RECMR.onstop=()=>{RECBLOB=new Blob(RECCHUNKS,{type:(RECCHUNKS[0]&&RECCHUNKS[0].type)||"audio/mp4"});RECURL=URL.createObjectURL(RECBLOB);stopStream();renderRecorder("done");};
-    RECMR.start();renderRecorder("rec");
-  }catch(e){renderRecorder("err","Micro indisponible : "+((e&&e.message)||e)+"\n\nSur iPhone : autorise le micro pour ce site (Réglages → Safari → Microphone), puis réessaie.");}
+    RECMR.onstop=()=>{RECBLOB=new Blob(RECCHUNKS,{type:(RECCHUNKS[0]&&RECCHUNKS[0].type)||"audio/mp4"});RECURL=URL.createObjectURL(RECBLOB);stopStream();renderRecPreview();};
+    RECMR.start();renderRecording();
+  }catch(e){openSheet(`<h2>Micro indisponible</h2><div style="font-size:14px;color:var(--coral);white-space:pre-wrap;line-height:1.5;margin-bottom:14px">${esc(((e&&e.message)||e)+"")}\n\nSur iPhone : autorise le micro (Réglages → Safari → Microphone), puis réessaie.</div><button class="btn ghost" onclick="renderChapitre()">← Retour</button>`);}
 }
+function renderRecording(){const a=curChapAction();openSheet(`<h2>${esc((a&&a.label)||"Chapitre")}</h2><div style="text-align:center;font-size:16px;color:var(--coral);font-weight:700;margin:20px 0">● Enregistrement en cours…</div><button class="btn del" onclick="stopRec()">⏹ Arrêter</button>`);}
+function renderRecPreview(){const a=curChapAction();openSheet(`<h2>${esc((a&&a.label)||"Chapitre")}</h2><audio controls src="${RECURL}" style="width:100%;margin:8px 0 14px"></audio><button class="btn primary" onclick="saveRec()">💾 Garder</button><button class="btn ghost" onclick="startRec()">↺ Refaire</button><button class="btn ghost" onclick="renderChapitre()">Annuler</button>`);}
 function stopRec(){try{if(RECMR&&RECMR.state!=="inactive")RECMR.stop();}catch(e){}}
 function stopStream(){try{if(RECSTREAM)RECSTREAM.getTracks().forEach(t=>t.stop());}catch(e){}RECSTREAM=null;}
 async function saveRec(){
-  if(!RECBLOB||!RECCTX)return;
-  const lbl=(($("rec_lbl")&&$("rec_lbl").value.trim())||"Ma voix");
-  const recId=uid();await putRec(recId,RECBLOB);
-  const e=trip().jours.find(x=>x.id===RECCTX.jid).etapes.find(x=>x.id===RECCTX.eid);
-  e.actions=e.actions||[];e.actions.push({type:"voix",label:lbl,recId:recId});
+  const a=curChapAction();if(!a||!RECBLOB)return;
+  const recId=a.recId||uid();await putRec(recId,RECBLOB);a.recId=recId;
   await save();if(RECURL){try{URL.revokeObjectURL(RECURL);}catch(e){}RECURL=null;}RECBLOB=null;
-  closeSheet();render();
+  renderChapitre();render();
 }
-async function playVoix(jid,eid,ai){
-  const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.recId)return;
+function playChap(){const a=curChapAction();if(a&&a.recId)playRec(a.recId);}
+async function playRec(recId){
   if(VAUDIO){try{VAUDIO.pause();}catch(e){}VAUDIO=null;}
-  const blob=await getRec(a.recId);if(!blob){alert("Enregistrement introuvable sur cet appareil (les voix restent sur le téléphone, pas dans le fichier de sauvegarde).");return;}
+  const blob=await getRec(recId);if(!blob){alert("Enregistrement introuvable sur cet appareil.");return;}
   const url=URL.createObjectURL(blob);VAUDIO=new Audio(url);VAUDIO.onended=()=>{try{URL.revokeObjectURL(url);}catch(e){}VAUDIO=null;};VAUDIO.play();
 }
 
@@ -610,7 +608,7 @@ function captureEditor(){
     if(a.type==="lien")return{type:"lien",label:label,url:$("au_"+i)?$("au_"+i).value.trim():a.url};
     if(a.type==="adresse")return{type:"adresse",label:label,adresse:$("aad_"+i)?$("aad_"+i).value.trim():a.adresse};
     if(a.type==="itineraire")return{type:"itineraire",label:label,depart:$("ad_"+i)?$("ad_"+i).value.trim():a.depart,arrivee:$("aa_"+i)?$("aa_"+i).value.trim():a.arrivee};
-    if(a.type==="audio")return{type:"audio",label:label,texte:$("at_"+i)?$("at_"+i).value:(a.texte||"")};
+    if(a.type==="audio")return{type:"audio",label:label,texte:$("at_"+i)?$("at_"+i).value:(a.texte||""),recId:a.recId};
     return Object.assign({},a,{label:label});
   });
   EDIT.notes=$("f_notes")?$("f_notes").value:EDIT.notes;
@@ -635,7 +633,7 @@ function renderEditor(){
     if(a.type==="itineraire")return `<div class="actrow"><div class="ah">🧭 Itinéraire</div>${lab}<input id="ad_${i}" value="${esc(a.depart)}" placeholder="Départ (ex. Elounda)"><input id="aa_${i}" value="${esc(a.arrivee)}" placeholder="Arrivée (ex. Plaka)">${rm}</div>`;
     if(a.type==="fichier")return `<div class="actrow"><div class="ah">📄 Fichier</div>${lab}<label class="filebtn">${a.data?"Remplacer le fichier":"Choisir un fichier"}<input type="file" id="af_${i}" onchange="pickFile(${i})"></label>${a.name?`<div style="margin-top:6px;font-size:13px;color:var(--ink-2)">${esc(a.name)}</div>`:""}${rm}</div>`;
     if(a.type==="photo")return `<div class="actrow"><div class="ah">🖼 Photo</div>${lab}<label class="filebtn">${a.data?"Remplacer la photo":"Choisir une photo"}<input type="file" accept="image/*" id="ap_${i}" onchange="pickPhoto(${i})"></label>${a.data?`<div style="margin-top:8px"><img src="${a.data}" style="max-width:100%;max-height:140px;border-radius:8px"></div>`:""}${rm}</div>`;
-    if(a.type==="audio")return `<div class="actrow"><div class="ah">🔊 Audio — texte lu à voix haute</div>${lab}<textarea id="at_${i}" style="min-height:96px" placeholder="Texte du chapitre à écouter…">${esc(a.texte||"")}</textarea>${rm}</div>`;
+    if(a.type==="audio")return `<div class="actrow"><div class="ah">📖 Chapitre — texte à lire / enregistrer${a.recId?" · 🎙️ enregistré":""}</div>${lab}<textarea id="at_${i}" style="min-height:96px" placeholder="Texte du chapitre…">${esc(a.texte||"")}</textarea>${rm}</div>`;
     if(a.type==="voix")return `<div class="actrow"><div class="ah">🎙️ Ma voix (enregistrement)</div>${lab}${rm}</div>`;
     return "";
   }).join("");
@@ -650,7 +648,7 @@ function renderEditor(){
       <div><label>Réservation</label><select id="f_reserve"><option value="">—</option><option value="1" ${e.reserve===true?"selected":""}>Réservé</option><option value="0" ${e.reserve===false?"selected":""}>À réserver</option><option value="na" ${e.reserve==='na'?"selected":""}>Non réservable</option></select></div></div>
     <div class="field"><label>Actions à ajouter</label>
       <div style="font-size:12px;color:var(--ink-2);margin:-2px 0 9px;line-height:1.45">📍 Maps, 🚗 Itinéraire et 📞 Appeler s'affichent <b>automatiquement</b> dès que l'adresse / le téléphone sont remplis. Ici, ajoute seulement le reste :</div>${actRows}
-      <div class="actadd"><button onclick="addAction('lien')">🔗 Lien</button><button onclick="addAction('fichier')">📄 Fichier</button><button onclick="addAction('photo')">🖼 Photo</button><button onclick="addAction('audio')">🔊 Audio</button></div></div>
+      <div class="actadd"><button onclick="addAction('lien')">🔗 Lien</button><button onclick="addAction('fichier')">📄 Fichier</button><button onclick="addAction('photo')">🖼 Photo</button><button onclick="addAction('audio')">📖 Chapitre</button></div></div>
     <div class="field"><label>Notes</label><textarea id="f_notes" style="min-height:80px">${esc(e.notes)}</textarea></div>
     <button class="btn primary" onclick="saveEvent()">Enregistrer</button>
     ${isNew?"":`<button class="btn del" onclick="delEvent('${EDIT_CTX.jid}','${EDIT_CTX.eid}')">Supprimer l'étape</button>`}`);
