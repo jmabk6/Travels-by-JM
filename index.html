@@ -200,7 +200,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v77";
+const VERSION="v78";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -268,11 +268,13 @@ function defChamps(groupe){const base=["Adresse","Téléphone"];const grp=(GROUP
 
 /* ---- storage ---- */
 let DB=null,MEM={},useMem=false;
-function openDB(){return new Promise(res=>{try{const r=indexedDB.open("voyages2",1);
-  r.onupgradeneeded=e=>{e.target.result.createObjectStore("kv");};
+function openDB(){return new Promise(res=>{try{const r=indexedDB.open("voyages2",2);
+  r.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains("kv"))db.createObjectStore("kv");if(!db.objectStoreNames.contains("rec"))db.createObjectStore("rec");};
   r.onsuccess=e=>{DB=e.target.result;res();}; r.onerror=()=>{useMem=true;res();};}catch(e){useMem=true;res();}});}
 function getKV(k){return new Promise(r=>{if(useMem)return r(MEM[k]);const t=DB.transaction("kv","readonly").objectStore("kv").get(k);t.onsuccess=()=>r(t.result);t.onerror=()=>r(undefined);});}
 function putKV(k,v){return new Promise(r=>{if(useMem){MEM[k]=v;return r();}const t=DB.transaction("kv","readwrite").objectStore("kv").put(v,k);t.onsuccess=()=>r();t.onerror=()=>r();});}
+function putRec(id,blob){return new Promise(r=>{if(useMem){MEM["rec_"+id]=blob;return r();}try{const t=DB.transaction("rec","readwrite").objectStore("rec").put(blob,id);t.onsuccess=()=>r();t.onerror=()=>r();}catch(e){r();}});}
+function getRec(id){return new Promise(r=>{if(useMem)return r(MEM["rec_"+id]);try{const t=DB.transaction("rec","readonly").objectStore("rec").get(id);t.onsuccess=()=>r(t.result);t.onerror=()=>r(undefined);}catch(e){r(undefined);}});}
 
 let DATA=null,view="aujourdhui",prevView="aujourdhui",cur=null,SPK=null,itinScroll=0;
 async function save(){await putKV("data",DATA);}
@@ -365,6 +367,7 @@ function renderDetail(){
     else if(a.type==="itineraire"&&(a.depart||a.arrivee))acts.push(`<a class="act" href="${dirUrl(a.depart,a.arrivee)}" target="_blank" rel="noopener"><span class="ic">🧭</span><span>${esc(a.label||((a.depart||"?")+" → "+(a.arrivee||"?")))}</span><span class="go">›</span></a>`);
     else if(a.type==="fichier"&&a.data)acts.push(`<a class="act" onclick="openAtt('${j.id}','${e.id}',${ai})"><span class="ic">📄</span><span>${esc(a.label||a.name||"Fichier")}</span><span class="go">›</span></a>`);
     else if(a.type==="photo"&&a.data)acts.push(`<a class="act" onclick="openImg('${j.id}','${e.id}',${ai})"><span class="ic">🖼</span><span>${esc(a.label||a.name||"Photo")}</span><span class="go">›</span></a>`);
+    else if(a.type==="voix"&&a.recId)acts.push(`<a class="act" onclick="playVoix('${j.id}','${e.id}',${ai})"><span class="ic">🎙️</span><span>${esc(a.label||"Ma voix")}</span><span class="go">▶︎</span></a>`);
     else if(a.type==="audio"&&a.texte){const pl=SPK&&SPK.jid===j.id&&SPK.eid===e.id&&SPK.ai===ai;acts.push(`<a class="act" onclick="speakAction('${j.id}','${e.id}',${ai})"><span class="ic">${pl?"⏸":"🔊"}</span><span>${pl?"Lecture en cours… (toucher pour arrêter)":esc(a.label||"Audio")}</span><span class="go">›</span></a>`);}
   });
   $("app").innerHTML=`
@@ -386,6 +389,7 @@ function renderDetail(){
         ${e.commentaire?`<div class="avis-txt">${esc(e.commentaire)}</div>`:""}
         <button class="copybtn" onclick="editComment()">${e.commentaire?"✎ Modifier mon commentaire":"+ Ajouter un commentaire"}</button>
       </div>
+      <button class="btn ghost" onclick="openRecorder('${j.id}','${e.id}')">🎙️ Enregistrer ma voix</button>
       <button class="btn primary" onclick="editEvent('${j.id}','${e.id}')">Modifier l'étape</button>
       <button class="btn del" onclick="delEvent('${j.id}','${e.id}')">Supprimer l'étape</button>
     </div>`;
@@ -516,6 +520,45 @@ function daySummary(j){
   return `<div class="frise"><div class="fr-bar">${bar}</div><div class="fr-legend">${legend}</div></div>`;
 }
 
+/* ============ V78 : enregistrement de ma propre voix ============ */
+let RECMR=null,RECCHUNKS=[],RECSTREAM=null,RECBLOB=null,RECURL=null,RECCTX=null,VAUDIO=null;
+function openRecorder(jid,eid){RECCTX={jid:jid,eid:eid};if(RECURL){try{URL.revokeObjectURL(RECURL);}catch(e){}RECURL=null;}RECBLOB=null;renderRecorder("idle");}
+function renderRecorder(state,extra){
+  let inner="";
+  if(state==="idle")inner=`<p style="font-size:13.5px;color:var(--ink-2);line-height:1.5;margin-bottom:14px">Lis ton texte à voix haute et enregistre-toi : ta voix remplacera le robot 🙂</p><button class="btn primary" onclick="startRec()">🎙️ Démarrer</button>`;
+  else if(state==="rec")inner=`<div style="text-align:center;font-size:16px;color:var(--coral);font-weight:700;margin:12px 0 18px">● Enregistrement en cours…</div><button class="btn del" onclick="stopRec()">⏹ Arrêter</button>`;
+  else if(state==="done")inner=`<audio controls src="${RECURL}" style="width:100%;margin:4px 0 14px"></audio><div class="field"><label>Intitulé</label><input id="rec_lbl" value="${esc(extra||"Ma voix")}" placeholder="ex. Chapitre 1"></div><button class="btn primary" onclick="saveRec()">💾 Garder</button><button class="btn ghost" onclick="startRec()">↺ Refaire</button>`;
+  else inner=`<div style="font-size:14px;color:var(--coral);white-space:pre-wrap;line-height:1.5;margin-bottom:14px">${esc(extra||"Micro indisponible.")}</div><button class="btn ghost" onclick="closeSheet()">Fermer</button>`;
+  openSheet(`<h2>🎙️ Enregistrer ma voix</h2>${inner}`);
+}
+async function startRec(){
+  try{
+    if(RECURL){try{URL.revokeObjectURL(RECURL);}catch(e){}RECURL=null;}RECBLOB=null;RECCHUNKS=[];
+    RECSTREAM=await navigator.mediaDevices.getUserMedia({audio:true});
+    RECMR=new MediaRecorder(RECSTREAM);
+    RECMR.ondataavailable=ev=>{if(ev.data&&ev.data.size)RECCHUNKS.push(ev.data);};
+    RECMR.onstop=()=>{RECBLOB=new Blob(RECCHUNKS,{type:(RECCHUNKS[0]&&RECCHUNKS[0].type)||"audio/mp4"});RECURL=URL.createObjectURL(RECBLOB);stopStream();renderRecorder("done");};
+    RECMR.start();renderRecorder("rec");
+  }catch(e){renderRecorder("err","Micro indisponible : "+((e&&e.message)||e)+"\n\nSur iPhone : autorise le micro pour ce site (Réglages → Safari → Microphone), puis réessaie.");}
+}
+function stopRec(){try{if(RECMR&&RECMR.state!=="inactive")RECMR.stop();}catch(e){}}
+function stopStream(){try{if(RECSTREAM)RECSTREAM.getTracks().forEach(t=>t.stop());}catch(e){}RECSTREAM=null;}
+async function saveRec(){
+  if(!RECBLOB||!RECCTX)return;
+  const lbl=(($("rec_lbl")&&$("rec_lbl").value.trim())||"Ma voix");
+  const recId=uid();await putRec(recId,RECBLOB);
+  const e=trip().jours.find(x=>x.id===RECCTX.jid).etapes.find(x=>x.id===RECCTX.eid);
+  e.actions=e.actions||[];e.actions.push({type:"voix",label:lbl,recId:recId});
+  await save();if(RECURL){try{URL.revokeObjectURL(RECURL);}catch(e){}RECURL=null;}RECBLOB=null;
+  closeSheet();render();
+}
+async function playVoix(jid,eid,ai){
+  const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.recId)return;
+  if(VAUDIO){try{VAUDIO.pause();}catch(e){}VAUDIO=null;}
+  const blob=await getRec(a.recId);if(!blob){alert("Enregistrement introuvable sur cet appareil (les voix restent sur le téléphone, pas dans le fichier de sauvegarde).");return;}
+  const url=URL.createObjectURL(blob);VAUDIO=new Audio(url);VAUDIO.onended=()=>{try{URL.revokeObjectURL(url);}catch(e){}VAUDIO=null;};VAUDIO.play();
+}
+
 /* ---- nav ---- */
 function openDetail(jid,eid){if(view!=="detail")prevView=view;itinScroll=window.scrollY;cur={jid:jid,eid:eid};view="detail";render();window.scrollTo(0,0);}
 function openImg(jid,eid,ai){const e=trip().jours.find(x=>x.id===jid).etapes.find(x=>x.id===eid);const a=(e.actions||[])[ai];if(!a||!a.data)return;$("imgView").innerHTML=`<img src="${a.data}" alt="">`;$("imgView").classList.add("on");}
@@ -593,6 +636,7 @@ function renderEditor(){
     if(a.type==="fichier")return `<div class="actrow"><div class="ah">📄 Fichier</div>${lab}<label class="filebtn">${a.data?"Remplacer le fichier":"Choisir un fichier"}<input type="file" id="af_${i}" onchange="pickFile(${i})"></label>${a.name?`<div style="margin-top:6px;font-size:13px;color:var(--ink-2)">${esc(a.name)}</div>`:""}${rm}</div>`;
     if(a.type==="photo")return `<div class="actrow"><div class="ah">🖼 Photo</div>${lab}<label class="filebtn">${a.data?"Remplacer la photo":"Choisir une photo"}<input type="file" accept="image/*" id="ap_${i}" onchange="pickPhoto(${i})"></label>${a.data?`<div style="margin-top:8px"><img src="${a.data}" style="max-width:100%;max-height:140px;border-radius:8px"></div>`:""}${rm}</div>`;
     if(a.type==="audio")return `<div class="actrow"><div class="ah">🔊 Audio — texte lu à voix haute</div>${lab}<textarea id="at_${i}" style="min-height:96px" placeholder="Texte du chapitre à écouter…">${esc(a.texte||"")}</textarea>${rm}</div>`;
+    if(a.type==="voix")return `<div class="actrow"><div class="ah">🎙️ Ma voix (enregistrement)</div>${lab}${rm}</div>`;
     return "";
   }).join("");
   openSheet(`<h2>${isNew?"Nouvelle étape":"Modifier l'étape"}</h2>
@@ -612,7 +656,7 @@ function renderEditor(){
     ${isNew?"":`<button class="btn del" onclick="delEvent('${EDIT_CTX.jid}','${EDIT_CTX.eid}')">Supprimer l'étape</button>`}`);
 }
 async function saveEvent(){captureEditor();if(!(EDIT.titre||"").trim()){alert("Donne un titre à l'étape.");return;}
-  EDIT.actions=(EDIT.actions||[]).filter(a=>a.type==="lien"?(a.label||a.url):a.type==="adresse"?a.adresse:a.type==="itineraire"?(a.depart||a.arrivee):a.type==="audio"?(a.label||a.texte):a.data);
+  EDIT.actions=(EDIT.actions||[]).filter(a=>a.type==="lien"?(a.label||a.url):a.type==="adresse"?a.adresse:a.type==="itineraire"?(a.depart||a.arrivee):a.type==="audio"?(a.label||a.texte):a.type==="voix"?a.recId:a.data);
   EDIT.champs=(EDIT.champs||[]).filter(c=>c.label||c.value);
   const target=trip().jours.find(x=>x.id===EDIT_CTX.jid);if(!target)return;
   if(EDIT_CTX.eid===null){target.etapes.push(EDIT);}
