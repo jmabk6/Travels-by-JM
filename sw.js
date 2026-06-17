@@ -1,4 +1,4 @@
-const CACHE = 'voyages-v93';
+const CACHE = 'voyages-v94';
 
 self.addEventListener('install', e => {
   self.skipWaiting();

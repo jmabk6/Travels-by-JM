@@ -226,7 +226,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v93";
+const VERSION="v94";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -707,10 +707,14 @@ function shareItinerary(){
   if(navigator.canShare){const file=new File([blob],fname,{type:"text/html"});if(navigator.canShare({files:[file]})){navigator.share({files:[file],title:v.titre+" — Itinéraire"}).catch(e=>{if(e&&e.name!=="AbortError")fallbackDownload(blob,fname);});return;}}
   fallbackDownload(blob,fname);
 }
-function exportVoyage(){
+async function exportVoyage(){
   try{
     const v=trip();if(!v)return;
-    const json=JSON.stringify({app:"voyages",type:"voyage",voyage:v});
+    const allIds=[...(v.photos||[])];
+    (v.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>(e.photos||[]).forEach(id=>allIds.push(id))));
+    const photoData={};
+    for(const id of allIds){try{const b=await getRec(id);if(b)photoData[id]=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b);});}catch(e){}}
+    const json=JSON.stringify({app:"voyages",type:"voyage",voyage:v,photoData});
     const slug=((v.titre||"voyage").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""))||"voyage";
     const d=new Date(),pad=n=>String(n).padStart(2,"0");
     const fname="voyage-"+slug+"-"+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+".json";
@@ -741,6 +745,7 @@ function importVoyage(){
           DATA.voyages[idx]=v;upd++;
         }else{if(!v.id)v.id=uid();DATA.voyages.push(v);added++;}
       }
+      if(obj.photoData){for(const [id,du] of Object.entries(obj.photoData)){try{await putRec(id,dataUrlToBlob(du));}catch(e){}}}
       await save();closeSheet();CURV=null;view="voyages";render();window.scrollTo(0,0);
       toast((((upd?upd+" voyage(s) mis à jour. ":"")+(added?added+" ajouté(s) ✔":"")).trim())||"Rien d'importé.");
     }catch(e){alert("Import impossible : "+((e&&e.message)||e));}
