@@ -1,4 +1,4 @@
-const CACHE = 'voyages-v90';
+const CACHE = 'voyages-v91';
 const SHELL = ['/', '/index.html', '/apple-touch-icon.png', '/manifest.json'];
 
 self.addEventListener('install', e => {
