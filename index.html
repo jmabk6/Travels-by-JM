@@ -504,6 +504,19 @@ function defaultInfos(){return {
   regimeFr:"Ma femme mange uniquement du poisson et des plats végétariens (pas de viande, ni crustacés ni mollusques). Moi, pas de porc.",
   urgences:[{label:"Urgences (UE)",num:"112"},{label:"Police",num:"100"},{label:"Ambulance",num:"166"},{label:"Pompiers",num:"199"}],
   notes:""};}
+function budgetSection(){
+  var v=trip();if(!v)return"";
+  var costs=[];
+  (v.jours||[]).forEach(function(j){(j.etapes||[]).forEach(function(e){if(e.cout)costs.push({nom:etName(e),cout:e.cout});});});
+  if(!v.budget&&!costs.length)return"";
+  var rows="";
+  if(v.budget)rows+='<div class="info-line"><b>Budget cible :</b> '+esc(v.budget)+'</div>';
+  if(costs.length){
+    rows+='<div class="info-line" style="margin-top:8px"><b>Postes de dépenses :</b></div>';
+    costs.forEach(function(c){rows+='<div class="info-line" style="padding-left:10px">&bull; '+esc(c.nom)+' &mdash; '+esc(c.cout)+'</div>';});
+  }
+  return '<div class="grp-h">&#x1F4B0; Budget</div><div class="info-card">'+rows+'</div>';
+}
 function renderInfos(){
   const t=trip();const inf=(t&&t.infos)||defaultInfos();
   const pick=gs=>{const out=[],seen={};(t.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>{if(gs.includes(e.groupe)){const k=etAddr(e)||etName(e);if(k&&!seen[k]){seen[k]=1;out.push(e);}}}));return out;};
@@ -518,7 +531,7 @@ function renderInfos(){
     ${hotels.length?`<div class="grp-h">🏨 Hébergements</div>${hotels.map(e=>card(e,true)).join("")}`:""}
     ${autos.length?`<div class="grp-h">🚗 Voiture</div>${autos.map(e=>card(e,false)).join("")}`:""}
     ${inf.notes?`<div class="grp-h">📝 Mes notes</div><div class="notes-box">${esc(inf.notes)}</div>`:""}
-    ${(()=>{const v=trip();const costs=[];(v.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>{if(e.cout)costs.push({nom:etName(e),cout:e.cout});}));if(!v.budget&&!costs.length)return"";return `<div class="grp-h">💰 Budget</div><div class="info-card">${v.budget?`<div class="info-line"><b>Budget cible :</b> ${esc(v.budget)}</div>`:""}${costs.length?`<div class="info-line" style="margin-top:${v.budget?8:0}px"><b>Postes de dépenses :</b></div>${costs.map(c=>`<div class="info-line" style="padding-left:10px">• ${esc(c.nom)} — ${esc(c.cout)}</div>`).join("")}`:""}</div>`;})()}
+    ${budgetSection()}
     <button class="btn ghost" style="margin-top:16px" onclick="editInfos()">Modifier les infos pratiques</button>
   </div>`+tabBar('infos');
 }
