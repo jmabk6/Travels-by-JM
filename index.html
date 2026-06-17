@@ -226,7 +226,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v89";
+const VERSION="v90";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -766,7 +766,7 @@ function renderPhotos(){
   /* Photos directes du voyage */
   const tripPics=t.photos||[];
   html+=`<div class="sec-lbl trip-photo-section">📸 Souvenirs du voyage</div><div class="gallery">`;
-  html+=tripPics.map(id=>`<div class="ph-thumb"><img data-pid="${id}" onclick="viewPhoto(‘${id}’)"><button class="ph-del" onclick="event.stopPropagation();delTripPhoto(‘${id}’)">×</button></div>`).join("");
+  html+=tripPics.map(id=>`<div class="ph-thumb"><img data-pid="${id}" onclick="viewPhoto('${id}')"><button class="ph-del" onclick="event.stopPropagation();delTripPhoto('${id}')">×</button></div>`).join("");
   html+=`<button class="ph-add" onclick="addTripPhotos()">+<span>photo</span></button></div>`;
   total+=tripPics.length;
 
@@ -776,8 +776,8 @@ function renderPhotos(){
     if(!items.length)return;total+=items.length;
     html+=`<div class="sec-lbl">${esc(dShort(j.date))} · ${esc(j.titre)}</div><div class="gallery">${items.map(it=>`<div class="ph-thumb"><img data-pid="${it.id}" onclick="viewPhoto(‘${it.id}’)"><button class="ph-del" onclick="event.stopPropagation();delPhoto(‘${j.id}’,’${it.eid}’,’${it.id}’)">×</button></div>`).join("")}</div>`;
   });
-  if(!total)html+=’<div class="empty" style="margin-top:8px">Aucune photo encore.</div>’;
-  $("app").innerHTML=topGeneric("Photos du voyage")+`<div class="wrap">${html}</div>`+tabBar(‘photos’);
+  if(!total)html+='<div class="empty" style="margin-top:8px">Aucune photo encore.</div>';
+  $("app").innerHTML=topGeneric("Photos du voyage")+`<div class="wrap">${html}</div>`+tabBar('photos');
   loadThumbs();
 }
 
