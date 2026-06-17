@@ -1,5 +1,10 @@
-const CACHE = 'voyages-v91';
-const SHELL = ['/', '/index.html', '/apple-touch-icon.png', '/manifest.json'];
+const CACHE = 'voyages-v92';
+const SHELL = [
+  '/Travels-by-JM/',
+  '/Travels-by-JM/index.html',
+  '/Travels-by-JM/apple-touch-icon.png',
+  '/Travels-by-JM/manifest.json'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));
