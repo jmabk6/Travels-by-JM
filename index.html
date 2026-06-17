@@ -8,8 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="Voyages">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0E6E78">
 <title>Mes Voyages</title>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');</script>
 <style>
 :root{
   --paper:#F5F2EA; --card:#FBFAF6; --ink:#1B2A41; --ink-2:#6B7689;
@@ -147,6 +149,17 @@ a{color:inherit;text-decoration:none}
 .lienrow input:last-of-type{margin-bottom:0}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 
+/* budget pill sur carte voyage */
+.voy-budget{font-size:12px;font-weight:700;color:#F4D9A2;margin-top:4px}
+/* section "photos du voyage" sans étape */
+.trip-photo-section{margin-bottom:6px}
+/* recurrence checkboxes */
+.rec-days{display:flex;flex-direction:column;gap:2px;margin-top:6px;max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:#fff}
+.rec-days label{display:flex;align-items:center;gap:8px;font-size:13px;padding:4px 0;cursor:pointer}
+.rec-days input[type=checkbox]{width:16px;height:16px;accent-color:var(--sea)}
+/* shift proposal */
+.shift-delta{font-size:22px;font-weight:700;font-family:var(--serif);color:var(--sea);display:block;margin:6px 0 12px}
+
 /* ---- V59 : onglets + vues Aujourd'hui / Réservations / Infos ---- */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;width:100%;max-width:430px;margin:0 auto;background:rgba(251,250,246,.97);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 4px calc(var(--safe-b) + 6px)}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 2px;font-size:10px;font-weight:700;color:var(--ink-2);letter-spacing:.01em}
@@ -213,7 +226,7 @@ a{color:inherit;text-decoration:none}
 
 <script>
 "use strict";
-const VERSION="v88";
+const VERSION="v89";
 const $=id=>document.getElementById(id);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -279,6 +292,12 @@ function bestPlaceQuery(e){
 function navUrl(dest){return "https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(dest||"");}
 function defChamps(groupe){const base=["Adresse","Téléphone"];const grp=(GROUPS[groupe]||[]).map(([k,l])=>l);return base.concat(grp).map(l=>({label:l,value:""}));}
 
+/* ---- helpers temps ---- */
+function timeToMin(hhmm){if(!hhmm)return 0;const[h,m]=(hhmm||"00:00").split(":").map(Number);return h*60+m;}
+function addMinutes(hhmm,delta){const total=((timeToMin(hhmm)+delta)%1440+1440)%1440;return String(Math.floor(total/60)).padStart(2,"0")+":"+String(total%60).padStart(2,"0");}
+function shiftSubsequentSteps(jid,fromTime,delta){const j=trip().jours.find(x=>x.id===jid);if(!j)return;(j.etapes||[]).forEach(e=>{if(e.locked||!e.debut||e.debut<=fromTime)return;e.debut=addMinutes(e.debut,delta);if(e.fin)e.fin=addMinutes(e.fin,delta);});}
+async function applyShift(jid,fromTime,delta){shiftSubsequentSteps(jid,fromTime,delta);await save();closeSheet();render();}
+
 /* ---- storage ---- */
 let DB=null,MEM={},useMem=false;
 function openDB(){return new Promise(res=>{try{const r=indexedDB.open("voyages2",2);
@@ -318,7 +337,7 @@ function migrate(){
   /* ancien modèle (un seul voyage) -> liste de voyages */
   if(DATA.trip&&!DATA.voyages){DATA.voyages=[{id:uid(),titre:(DATA.trip.titre||"Voyage"),lieu:"",jours:DATA.trip.jours||[],infos:DATA.infos||defaultInfos()}];delete DATA.trip;delete DATA.infos;}
   if(!DATA.voyages)DATA.voyages=[];
-  DATA.voyages.forEach(v=>{if(!v.id)v.id=uid();if(!v.infos)v.infos=defaultInfos();(v.jours||[]).forEach(j=>(j.etapes||[]).forEach(migrateEtape));});
+  DATA.voyages.forEach(v=>{if(!v.id)v.id=uid();if(!v.infos)v.infos=defaultInfos();if(!v.photos)v.photos=[];if(v.budget===undefined)v.budget="";(v.jours||[]).forEach(j=>(j.etapes||[]).forEach(migrateEtape));});
 }
 function trip(){return (DATA&&DATA.voyages)?(DATA.voyages.find(v=>v.id===CURV)||null):null;}
 function sortDay(j){if(j&&j.etapes)j.etapes.sort((a,b)=>(a.debut||"99:99").localeCompare(b.debut||"99:99"));}
@@ -429,7 +448,7 @@ function evCard(j,e){const m=gmeta(e.groupe);
   return `<div class="ev t-${m.t} ${isRepas(e)?'is-resto':(macroOf(e.groupe)==='detente'?'is-detente':(e.groupe==='Vol'||e.groupe==='Transport'?'is-transport':''))} ${e.statut==='fait'?'done':''}" style="--gc:${m.c};--gb:${m.b}" onclick="openDetail('${j.id}','${e.id}')">
     <div class="ev-time">${timeStack(e)}</div>
     <div class="ev-chip">${m.i}</div>
-    <div class="ev-body"><div class="ev-ttl">${esc(etName(e))}${e.groupe==='Vol'&&(chVal(e,"Durée de vol")||chVal(e,"Durée"))?` (${esc(chVal(e,"Durée de vol")||chVal(e,"Durée"))})`:""}</div><div class="ev-tag">${esc(e.groupe||"")}${e.note?` · <span class="ev-stars">${"★".repeat(e.note)}</span>`:""}</div></div>
+    <div class="ev-body"><div class="ev-ttl">${esc(etName(e))}${e.groupe==='Vol'&&(chVal(e,"Durée de vol")||chVal(e,"Durée"))?` (${esc(chVal(e,"Durée de vol")||chVal(e,"Durée"))})`:""}</div><div class="ev-tag">${esc(e.groupe||"")}${e.locked?' · 🔒':''}${e.note?` · <span class="ev-stars">${"★".repeat(e.note)}</span>`:""}</div></div>
     <span class="ev-chev">›</span></div>`;}
 
 function tabBar(active){
@@ -499,6 +518,7 @@ function renderInfos(){
     ${hotels.length?`<div class="grp-h">🏨 Hébergements</div>${hotels.map(e=>card(e,true)).join("")}`:""}
     ${autos.length?`<div class="grp-h">🚗 Voiture</div>${autos.map(e=>card(e,false)).join("")}`:""}
     ${inf.notes?`<div class="grp-h">📝 Mes notes</div><div class="notes-box">${esc(inf.notes)}</div>`:""}
+    ${(()=>{const v=trip();const costs=[];(v.jours||[]).forEach(j=>(j.etapes||[]).forEach(e=>{if(e.cout)costs.push({nom:etName(e),cout:e.cout});}));if(!v.budget&&!costs.length)return"";return `<div class="grp-h">💰 Budget</div><div class="info-card">${v.budget?`<div class="info-line"><b>Budget cible :</b> ${esc(v.budget)}</div>`:""}${costs.length?`<div class="info-line" style="margin-top:${v.budget?8:0}px"><b>Postes de dépenses :</b></div>${costs.map(c=>`<div class="info-line" style="padding-left:10px">• ${esc(c.nom)} — ${esc(c.cout)}</div>`).join("")}`:""}</div>`;})()}
     <button class="btn ghost" style="margin-top:16px" onclick="editInfos()">Modifier les infos pratiques</button>
   </div>`+tabBar('infos');
 }
@@ -616,6 +636,7 @@ function renderVoyages(){
       <div class="voy-title">${esc(v.titre||"Voyage")}</div>
       ${v.lieu?`<div class="voy-lieu">${esc(v.lieu)}</div>`:""}
       <div class="voy-meta">${esc(meta)}</div>
+      ${v.budget?`<div class="voy-budget">💰 ${esc(v.budget)}</div>`:""}
     </div>`;
   }).join("")||'<div class="empty">Aucun voyage encore.<br>Touche + pour en créer un.</div>';
   $("app").innerHTML=`
@@ -629,14 +650,16 @@ function backToVoyages(){stopSpeak();CURV=null;cur=null;view="voyages";render();
 function newVoyage(){openSheet(`<h2>Nouveau voyage</h2>
   <div class="field"><label>Nom</label><input id="v_titre" placeholder="ex. Lisbonne — escapade"></div>
   <div class="field"><label>Lieu / destination</label><input id="v_lieu" placeholder="ex. Portugal"></div>
+  <div class="field"><label>Budget cible (optionnel)</label><input id="v_budget" placeholder="ex. 3 500 €"></div>
   <button class="btn primary" onclick="saveNewVoyage()">Créer le voyage</button>`);}
-async function saveNewVoyage(){const id=uid();DATA.voyages=DATA.voyages||[];DATA.voyages.push({id:id,titre:val("v_titre")||"Nouveau voyage",lieu:val("v_lieu"),jours:[],infos:defaultInfos()});await save();closeSheet();CURV=id;view="itin";render();window.scrollTo(0,0);}
+async function saveNewVoyage(){const id=uid();DATA.voyages=DATA.voyages||[];DATA.voyages.push({id:id,titre:val("v_titre")||"Nouveau voyage",lieu:val("v_lieu"),budget:val("v_budget"),photos:[],jours:[],infos:defaultInfos()});await save();closeSheet();CURV=id;view="itin";render();window.scrollTo(0,0);}
 function editVoyage(id){const v=(DATA.voyages||[]).find(x=>x.id===id);if(!v)return;openSheet(`<h2>Modifier le voyage</h2>
   <div class="field"><label>Nom</label><input id="v_titre" value="${esc(v.titre||"")}"></div>
   <div class="field"><label>Lieu / destination</label><input id="v_lieu" value="${esc(v.lieu||"")}"></div>
+  <div class="field"><label>Budget cible</label><input id="v_budget" value="${esc(v.budget||"")}" placeholder="ex. 3 500 €"></div>
   <button class="btn primary" onclick="saveVoyageEdit('${id}')">Enregistrer</button>
   <button class="btn del" onclick="delVoyage('${id}')">Supprimer ce voyage</button>`);}
-async function saveVoyageEdit(id){const v=(DATA.voyages||[]).find(x=>x.id===id);if(!v)return;v.titre=val("v_titre")||v.titre;v.lieu=val("v_lieu");await save();closeSheet();render();}
+async function saveVoyageEdit(id){const v=(DATA.voyages||[]).find(x=>x.id===id);if(!v)return;v.titre=val("v_titre")||v.titre;v.lieu=val("v_lieu");v.budget=val("v_budget");await save();closeSheet();render();}
 async function delVoyage(id){if(!confirm("Supprimer ce voyage et toutes ses journées ?"))return;DATA.voyages=(DATA.voyages||[]).filter(x=>x.id!==id);await save();closeSheet();CURV=null;view="voyages";render();window.scrollTo(0,0);}
 
 /* ============ V84 : sauvegarde / import PAR voyage ============ */
@@ -644,9 +667,32 @@ function openVoyageMenu(){
   const v=trip();if(!v)return;
   openSheet(`<h2>${esc(v.titre||"Voyage")}</h2>
     <button class="btn primary" onclick="exportVoyage()">💾 Sauvegarder ce voyage (fichier)</button>
-    <button class="btn ghost" onclick="editVoyage('${v.id}')">✏️ Renommer / supprimer ce voyage</button>
+    <button class="btn ghost" onclick="shareItinerary()">📤 Partager l'itinéraire (lecture seule)</button>
+    <button class="btn ghost" onclick="editVoyage('${v.id}')">✏️ Renommer / budget / supprimer</button>
     <div style="font-size:12.5px;color:var(--ink-2);margin:14px 2px 0;line-height:1.55"><b>Sauvegarder :</b> crée un fichier de CE voyage uniquement (à garder ou à m'envoyer pour le modifier). Pour le récupérer : « Importer un voyage » depuis l'écran Mes voyages.</div>
     <div class="ver" style="margin-top:16px">Version ${VERSION}</div>`);
+}
+function shareItinerary(){
+  const v=trip();if(!v)return;
+  const jours=[...(v.jours||[])].sort((a,b)=>(a.date||"")<(b.date||"")?-1:1);
+  let body=``;
+  jours.forEach((j,di)=>{
+    sortDay(j);
+    body+=`<h2>Jour ${di+1} · ${dLong(j.date)||"J"+(di+1)} — ${j.titre||""}</h2><ul>`;
+    (j.etapes||[]).forEach(e=>{
+      const t=e.debut?`<b>${fmtTime(e.debut)}${e.fin?"–"+fmtTime(e.fin):""}</b> · `:"";
+      const addr=etAddr(e);
+      body+=`<li>${t}${e.titre||etName(e)} <span style="color:#6B7689">(${e.groupe||""})${addr?" · "+addr:""}${e.cout?" · "+e.cout:""}</span></li>`;
+    });
+    body+=`</ul>`;
+  });
+  const infos=(v.infos||defaultInfos());
+  const html=`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${v.titre} — Itinéraire</title><style>body{font-family:system-ui,-apple-system,sans-serif;max-width:640px;margin:0 auto;padding:20px;color:#1B2A41;background:#F5F2EA}h1{color:#0E7C86;font-size:24px}h2{margin-top:28px;border-bottom:2px solid #E4DECF;padding-bottom:8px;color:#0B5F67;font-size:17px}li{margin:7px 0;line-height:1.45}ul{padding-left:18px}.footer{margin-top:36px;font-size:11px;color:#9AA0A8;border-top:1px solid #E4DECF;padding-top:12px}</style></head><body><h1>${v.titre}${v.lieu?" — "+v.lieu:""}</h1>${v.budget?`<p><b>💰 Budget :</b> ${v.budget}</p>`:""}${body}<div class="footer">Créé avec Mes Voyages · ${new Date().toLocaleDateString("fr-FR")}</div></body></html>`;
+  const slug=((v.titre||"voyage").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""))||"voyage";
+  const fname="itineraire-"+slug+".html";
+  const blob=new Blob([html],{type:"text/html"});
+  if(navigator.canShare){const file=new File([blob],fname,{type:"text/html"});if(navigator.canShare({files:[file]})){navigator.share({files:[file],title:v.titre+" — Itinéraire"}).catch(e=>{if(e&&e.name!=="AbortError")fallbackDownload(blob,fname);});return;}}
+  fallbackDownload(blob,fname);
 }
 function exportVoyage(){
   try{
@@ -683,23 +729,42 @@ function importVoyage(){
         }else{if(!v.id)v.id=uid();DATA.voyages.push(v);added++;}
       }
       await save();closeSheet();CURV=null;view="voyages";render();window.scrollTo(0,0);
-      alert((((upd?upd+" voyage(s) mis à jour. ":"")+(added?added+" ajouté(s).":"")).trim())||"Rien d'importé.");
+      toast((((upd?upd+" voyage(s) mis à jour. ":"")+(added?added+" ajouté(s) ✔":"")).trim())||"Rien d'importé.");
     }catch(e){alert("Import impossible : "+((e&&e.message)||e));}
   };
   inp.click();
 }
 
 /* ============ V87 : galerie photos du voyage ============ */
+function addTripPhotos(){
+  const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.multiple=true;
+  inp.onchange=async()=>{
+    const v=trip();v.photos=v.photos||[];
+    for(const f of Array.from(inp.files||[])){try{const du=await readImage(f,1600,0.82);const blob=dataUrlToBlob(du);const id=uid();await putRec(id,blob);v.photos.push(id);}catch(e){}}
+    await save();render();
+  };inp.click();
+}
+async function delTripPhoto(id){if(!confirm("Supprimer cette photo du voyage ?"))return;const v=trip();v.photos=(v.photos||[]).filter(p=>p!==id);await save();delRec(id);render();}
+
 function renderPhotos(){
   const t=trip();const jours=[...(t.jours||[])].sort((a,b)=>(a.date||"")<(b.date||"")?-1:1);
   let total=0,html="";
+
+  /* Photos directes du voyage */
+  const tripPics=t.photos||[];
+  html+=`<div class="sec-lbl trip-photo-section">📸 Souvenirs du voyage</div><div class="gallery">`;
+  html+=tripPics.map(id=>`<div class="ph-thumb"><img data-pid="${id}" onclick="viewPhoto(‘${id}’)"><button class="ph-del" onclick="event.stopPropagation();delTripPhoto(‘${id}’)">×</button></div>`).join("");
+  html+=`<button class="ph-add" onclick="addTripPhotos()">+<span>photo</span></button></div>`;
+  total+=tripPics.length;
+
+  /* Photos par étape */
   jours.forEach(j=>{
     const items=[];(j.etapes||[]).forEach(e=>(e.photos||[]).forEach(id=>items.push({id:id,eid:e.id})));
     if(!items.length)return;total+=items.length;
-    html+=`<div class="sec-lbl">${esc(dShort(j.date))} · ${esc(j.titre)}</div><div class="gallery">${items.map(it=>`<div class="ph-thumb"><img data-pid="${it.id}" onclick="viewPhoto('${it.id}')"><button class="ph-del" onclick="event.stopPropagation();delPhoto('${j.id}','${it.eid}','${it.id}')">×</button></div>`).join("")}</div>`;
+    html+=`<div class="sec-lbl">${esc(dShort(j.date))} · ${esc(j.titre)}</div><div class="gallery">${items.map(it=>`<div class="ph-thumb"><img data-pid="${it.id}" onclick="viewPhoto(‘${it.id}’)"><button class="ph-del" onclick="event.stopPropagation();delPhoto(‘${j.id}’,’${it.eid}’,’${it.id}’)">×</button></div>`).join("")}</div>`;
   });
-  if(!total)html='<div class="empty">Aucune photo pour l’instant.<br>Ajoute des photos depuis une étape (visite, resto, plage…).</div>';
-  $("app").innerHTML=topGeneric("Photos du voyage")+`<div class="wrap">${html}</div>`+tabBar('photos');
+  if(!total)html+=’<div class="empty" style="margin-top:8px">Aucune photo encore.</div>’;
+  $("app").innerHTML=topGeneric("Photos du voyage")+`<div class="wrap">${html}</div>`+tabBar(‘photos’);
   loadThumbs();
 }
 
@@ -741,9 +806,10 @@ const val=id=>{const el=$(id);return el?el.value.trim():"";};
 /* ---- editor (groupe-aware) ---- */
 let EDIT=null,EDIT_CTX=null;
 function editEvent(jid,eid){const j=trip().jours.find(x=>x.id===jid);const e=j.etapes.find(x=>x.id===eid);
-  EDIT=JSON.parse(JSON.stringify(e));EDIT_CTX={jid:jid,eid:eid,origJid:jid};renderEditor();}
+  EDIT=JSON.parse(JSON.stringify(e));EDIT._origDebut=e.debut;EDIT._recDays=[];
+  EDIT_CTX={jid:jid,eid:eid,origJid:jid};renderEditor();}
 function addEvent(jid){const first=trip().jours[0];
-  EDIT={id:uid(),debut:"",fin:"",groupe:"Visite",titre:"",cout:"",reserve:null,champs:defChamps("Visite"),actions:[],notes:"",statut:"prevu"};
+  EDIT={id:uid(),debut:"",fin:"",groupe:"Visite",titre:"",cout:"",reserve:null,champs:defChamps("Visite"),actions:[],notes:"",statut:"prevu",locked:false,_origDebut:null,_recDays:[]};
   EDIT_CTX={jid:jid||(first?first.id:null),eid:null,origJid:null};renderEditor();}
 function captureEditor(){
   EDIT.debut=val("f_debut");EDIT.fin=val("f_fin");EDIT.groupe=$("f_groupe").value;EDIT.cout=val("f_cout");EDIT.titre=val("f_titre");
@@ -758,6 +824,8 @@ function captureEditor(){
     return Object.assign({},a,{label:label});
   });
   EDIT.notes=$("f_notes")?$("f_notes").value:EDIT.notes;
+  EDIT.locked=!!($("f_locked")&&$("f_locked").checked);
+  EDIT._recDays=[...(document.querySelectorAll(".rec-day:checked")||[])].map(el=>el.value);
   if($("f_jour"))EDIT_CTX.jid=$("f_jour").value;
 }
 function onGroupChange(){captureEditor();if((EDIT.champs||[]).every(c=>!c.value))EDIT.champs=defChamps(EDIT.groupe);renderEditor();}
@@ -796,10 +864,21 @@ function renderEditor(){
       <div style="font-size:12px;color:var(--ink-2);margin:-2px 0 9px;line-height:1.45">📍 Maps, 🚗 Itinéraire et 📞 Appeler s'affichent <b>automatiquement</b> dès que l'adresse / le téléphone sont remplis. Ici, ajoute seulement le reste :</div>${actRows}
       <div class="actadd"><button onclick="addAction('lien')">🔗 Lien</button><button onclick="addAction('fichier')">📄 Fichier</button><button onclick="addAction('audio')">📖 Chapitre</button></div></div>
     <div class="field"><label>Notes</label><textarea id="f_notes" style="min-height:80px">${esc(e.notes)}</textarea></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="f_locked" ${e.locked?'checked':''} style="width:16px;height:16px;accent-color:var(--sea)"> 🔒 Verrouiller l'heure (réservation — ne pas décaler)</label></div>
+    <div class="field"><label>🔄 Répéter sur d'autres jours</label><div style="font-size:12px;color:var(--ink-2);margin:-2px 0 4px">Copie l'étape telle quelle sur les jours cochés :</div>
+    <div class="rec-days">${trip().jours.map(j=>{const cur=j.id===EDIT_CTX.jid;const chk=(EDIT._recDays||[]).includes(j.id);return `<label><input type="checkbox" class="rec-day" value="${j.id}" ${cur?'disabled checked':chk?'checked':''}> ${esc(dShort(j.date)||("Jour sans date"))} — ${esc(j.titre||"")}</label>`;}).join("")}</div></div>
     <button class="btn primary" onclick="saveEvent()">Enregistrer</button>
     ${isNew?"":`<button class="btn del" onclick="delEvent('${EDIT_CTX.jid}','${EDIT_CTX.eid}')">Supprimer l'étape</button>`}`);
 }
-async function saveEvent(){captureEditor();if(!(EDIT.titre||"").trim()){alert("Donne un titre à l'étape.");return;}
+async function saveEvent(){
+  captureEditor();
+  if(!(EDIT.titre||"").trim()){alert("Donne un titre à l'étape.");return;}
+
+  const origDebut=EDIT._origDebut;
+  const recDayIds=(EDIT._recDays||[]).filter(jid=>jid!==EDIT_CTX.jid);
+  const sameDay=EDIT_CTX.jid===EDIT_CTX.origJid;
+  delete EDIT._origDebut;delete EDIT._recDays;
+
   EDIT.actions=(EDIT.actions||[]).filter(a=>a.type==="lien"?(a.label||a.url):a.type==="adresse"?a.adresse:a.type==="itineraire"?(a.depart||a.arrivee):a.type==="audio"?(a.label||a.texte):a.type==="voix"?a.recId:a.data);
   EDIT.champs=(EDIT.champs||[]).filter(c=>c.label||c.value);
   const target=trip().jours.find(x=>x.id===EDIT_CTX.jid);if(!target)return;
@@ -809,7 +888,29 @@ async function saveEvent(){captureEditor();if(!(EDIT.titre||"").trim()){alert("D
     target.etapes.push(EDIT);
     if(orig&&orig!==target)sortDay(orig);}
   cur={jid:target.id,eid:EDIT.id};sortDay(target);
-  await save();closeSheet();view="detail";render();}
+
+  for(const jid of recDayIds){
+    const td=trip().jours.find(x=>x.id===jid);
+    if(td){const copy=JSON.parse(JSON.stringify(EDIT));copy.id=uid();td.etapes.push(copy);sortDay(td);}
+  }
+
+  await save();closeSheet();view="detail";render();
+
+  const delta=origDebut&&EDIT.debut?timeToMin(EDIT.debut)-timeToMin(origDebut):0;
+  if(delta!==0&&origDebut&&sameDay){
+    const j=trip().jours.find(x=>x.id===EDIT_CTX.jid);
+    const hasNext=j&&(j.etapes||[]).some(e=>e.id!==EDIT.id&&!e.locked&&e.debut&&e.debut>origDebut);
+    if(hasNext){
+      const sign=delta>0?"+":"";
+      openSheet(`<h2>Décaler le planning ?</h2>
+        <div style="font-size:14px;line-height:1.55;margin-bottom:6px">L'heure de début a changé de</div>
+        <span class="shift-delta">${sign}${fmtDur(Math.abs(delta))}</span>
+        <div style="font-size:14px;line-height:1.55;margin-bottom:16px">Décaler toutes les étapes suivantes de cette journée ? (les étapes 🔒 verrouillées restent en place)</div>
+        <button class="btn primary" onclick="applyShift('${EDIT_CTX.jid}','${origDebut}',${delta})">Oui, décaler</button>
+        <button class="btn ghost" onclick="closeSheet()">Non, garder tel quel</button>`);
+    }
+  }
+}
 async function delEvent(jid,eid){if(!confirm("Supprimer cette étape ?"))return;
   const j=trip().jours.find(x=>x.id===jid);j.etapes=j.etapes.filter(x=>x.id!==eid);
   await save();closeSheet();view="itin";cur=null;render();}
