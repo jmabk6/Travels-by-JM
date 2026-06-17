@@ -2,7 +2,7 @@
   "name": "Mes Voyages",
   "short_name": "Voyages",
   "description": "Carnet de voyage personnel — itinéraires, réservations, photos",
-  "start_url": "/",
+  "start_url": "/Travels-by-JM/",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#0E7C86",
